@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMART Goal Lab - Panorama Education</title>
+   
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+   
+    <script src="https://cdn.tailwindcss.com"></script>
+   
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
+   
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        pano: {
+                            navy: '#161242',
+                            green: '#1FAA4A',
+                            blue: '#006DB0',
+                            teal: '#00A1BB',
+                            lavender: '#867EBB',
+                            lime: '#9FCC3B',
+                            lightGray: '#EEEEEE',
+                            darkGray: '#585958',
+                        }
+                    },
+                    fontFamily: {
+                        header: ['Montserrat', 'sans-serif'],
+                        body: ['Open Sans', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Open Sans', sans-serif;
+            background-color: #F3F4F6;
+        }
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Montserrat', sans-serif;
+        }
+       
+        /* Tangram Background Shape */
+        .tangram-bg {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 40%;
+            height: 100%;
+            background-color: #161242;
+            clip-path: polygon(20% 0, 100% 0, 100% 100%, 80% 100%);
+            opacity: 0.05;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* Scrollbar for Inspiration Panel */
+        .custom-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scroll::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 3px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb:hover {
+            background: #1FAA4A;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+
+        // --- DATA: EXEMPLARS FROM PDF ---
+        const EXEMPLARS = {
+            ELA: [
+                {
+                    title: "Phonics: Letter Recognition",
+                    text: "By the end of [8 weeks], the student will accurately identify all [uppercase/lowercase letters], improving from [25%] to [85%] proficiency."
+                },
+                {
+                    title: "Reading: Syllable Identification",
+                    text: "By the end of [6 weeks], the student will accurately determine the number of syllables in [15 multisyllabic words], enhancing performance from [20%] to [80%]."
+                },
+                {
+                    title: "Reading Comp: Main Idea",
+                    text: "By the end of [8 weeks], when reading an instructional level text, the student will accurately identify the main idea and two supporting details, increasing from [40%] to [80%] accuracy."
+                },
+                {
+                    title: "Vocabulary: Context Clues",
+                    text: "By the end of [6 weeks], the student will use context clues to determine unknown words when reading grade level text, improving accuracy from [60%] to [90%]."
+                }
+            ],
+            Math: [
+                {
+                    title: "Operations: Addition with Manipulatives",
+                    text: "By the end of [4 weeks], using [manipulatives], the student will apply addition to combine sets and determine the total in [10 problems], progressing from [20%] to [90%] accuracy."
+                },
+                {
+                    title: "Multiplication: 2-Digit by 1-Digit",
+                    text: "By the end of [4 weeks], given a set of [10 numbers], the student will multiply a 2-3 digit number by a one digit number from [20%] to [80%] accuracy."
+                },
+                {
+                    title: "Fractions: Common Denominator",
+                    text: "By the end of [8 weeks], given two unlike fractions, the student will find the common denominator and create equivalent fractions with [90%] accuracy on [15 items]. Baseline: [10%]."
+                }
+            ],
+            Behavior: [
+                {
+                    title: "Self-Regulation: Calming Corner",
+                    text: "By the end of [8 weeks], student will request a break in the calming corner in lieu of eloping from the classroom in at least [80%] of opportunities."
+                },
+                {
+                    title: "Classroom Expectations: On-Task",
+                    text: "By the end of [6 weeks], during large group instruction, student will improve their rate of on-task behavior (raising hand, staying seated) from [50%] to [80%]."
+                },
+                {
+                    title: "Social Skills: Taking Turns",
+                    text: "By the end of [8 weeks], the student will be able to take turns by waiting their turn and sharing materials with others in [90%] of observed opportunities."
+                }
+            ],
+            Attendance: [
+                {
+                    title: "Routine: Morning Arrival",
+                    text: "Student will achieve [90%] attendance by implementing a morning routine with a visual calendar and reward system within the next [school quarter]."
+                },
+                {
+                    title: "Secondary: Self-Monitoring",
+                    text: "Increase attendance by [10%] over the next [6 weeks] by establishing a daily routine, setting alarms, and involving parents to monitor punctuality."
+                }
+            ]
+        };
+
+        // --- LOGIC: HEURISTIC ANALYSIS ---
+        const analyzeGoal = (text) => {
+            const analysis = {
+                specific: { score: 0, feedback: "Start typing to analyze specificity." },
+                measurable: { score: 0, feedback: "Waiting for data points..." },
+                attainable: { score: 0, feedback: "Waiting for baseline and target..." },
+                relevant: { score: 0, feedback: "Does this address the student's core need?" },
+                timeBound: { score: 0, feedback: "When will this goal be met?" }
+            };
+
+            const lowerText = text.toLowerCase();
+
+            // 1. TIME BOUND CHECK
+            const timePatterns = [
+                /by\s+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)/i,
+                /(in|over|within)\s+(the\s+)?(next\s+)?(\d+|one|two|three|four|five|six|seven|eight)\s+(week|month)/i,
+                /by\s+\d{1,2}\/\d{1,2}/,
+                /end of/i,
+                /\[time/i // Checks for template placeholder
+            ];
+            const hasTime = timePatterns.some(regex => regex.test(text));
+           
+            if (hasTime) {
+                analysis.timeBound.score = 1;
+                analysis.timeBound.feedback = "Great job! You've set a clear deadline.";
+            } else {
+                analysis.timeBound.feedback = "I don't see a clear deadline yet. Try adding phrases like 'By November 15' or 'In 6 weeks'.";
+            }
+
+            // 2. MEASURABLE CHECK
+            const hasNumbers = /\d+/.test(text);
+            const hasFromTo = /from\s+.*(\d+|\[).*\s+to\s+.*(\d+|\[)/i.test(text); // Check for numbers OR template brackets
+            const hasUnits = /%|wpm|accuracy|items|trials|level|proficiency|opportunities/i.test(text);
+
+            if (hasFromTo && hasUnits) {
+                analysis.measurable.score = 1;
+                analysis.measurable.feedback = "Excellent! You have a baseline, a target, and a unit of measurement.";
+            } else if (hasFromTo) {
+                analysis.measurable.score = 0.8;
+                analysis.measurable.feedback = <span>Good structure (From &rarr; To), but make sure you specify the unit (e.g., %, WPM).</span>;
+            } else if (hasNumbers) {
+                analysis.measurable.score = 0.5;
+                analysis.measurable.feedback = "I see numbers. Try using the 'increase from [baseline] to [target]' structure.";
+            } else {
+                analysis.measurable.feedback = "How will we measure success? Try adding specific numbers for Baseline and Target.";
+            }
+
+            // 3. SPECIFIC CHECK
+            const vagueWords = ['understand', 'learn', 'know', 'improve reading', 'get better', 'study', 'pay attention'];
+            const actionWords = ['identify', 'calculate', 'solve', 'write', 'decode', 'analyze', 'compare', 'demonstrate', 'focus', 'request', 'utilize'];
+           
+            const foundVague = vagueWords.filter(w => lowerText.includes(w));
+            const foundAction = actionWords.filter(w => lowerText.includes(w));
+
+            if (foundVague.length > 0) {
+                analysis.specific.score = 0.5;
+                analysis.specific.feedback = <span>Careful! The word <strong>"{foundVague[0]}"</strong> is vague. Try an action verb like 'identify' or 'calculate'.</span>;
+            } else if (foundAction.length > 0 && text.length > 30) {
+                analysis.specific.score = 1;
+                analysis.specific.feedback = "Nice use of specific action verbs.";
+            } else if (text.length < 20) {
+                analysis.specific.feedback = "Be specific about exactly what skill the student will demonstrate.";
+            } else {
+                analysis.specific.score = 0.8;
+                analysis.specific.feedback = <span>Looking good. Ensure you are describing exactly <strong>what</strong> the student is doing.</span>;
+            }
+
+            // 4. ATTAINABLE (Reflective)
+            if (hasFromTo) {
+                analysis.attainable.score = 1;
+                analysis.attainable.feedback = "You have a baseline and target. Pause: Is this jump realistic for the timeframe?";
+            } else {
+                analysis.attainable.feedback = "Once you set your 'from' and 'to' numbers, check: Is the growth realistic?";
+            }
+
+            // 5. RELEVANT (Context)
+            if (text.length > 10) {
+                analysis.relevant.score = 1;
+                analysis.relevant.feedback = "Ensure this skill ties directly to the student's identified deficit area.";
+            }
+
+            return analysis;
+        };
+
+        // --- COMPONENT: PROGRESS BAR ---
+        const ProgressBar = ({ score, label, icon, feedback }) => {
+            const isComplete = score === 1;
+            const isPartial = score > 0 && score < 1;
+           
+            let barColor = 'bg-gray-200';
+            let iconColor = 'bg-gray-100 text-gray-400';
+           
+            if (isComplete) {
+                barColor = 'bg-pano-green';
+                iconColor = 'bg-green-100 text-pano-green';
+            } else if (isPartial) {
+                barColor = 'bg-pano-lime';
+                iconColor = 'bg-yellow-50 text-yellow-600';
+            }
+
+            return (
+                <div className="mb-6 group">
+                    <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-3">
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${iconColor}`}>
+                                <i className={`fas ${icon}`}></i>
+                            </div>
+                            <h3 className="font-header font-bold text-pano-navy text-sm uppercase tracking-wide">{label}</h3>
+                        </div>
+                        {isComplete && <i className="fas fa-check-circle text-pano-green text-xl"></i>}
+                    </div>
+                   
+                    <div className="w-full bg-gray-100 rounded-full h-2 mb-2 overflow-hidden">
+                        <div
+                            className={`h-2 rounded-full transition-all duration-1000 ease-out ${barColor}`}
+                            style={{ width: `${score * 100}%` }}
+                        ></div>
+                    </div>
+                   
+                    <p className={`text-xs font-body ${isComplete ? 'text-pano-green font-semibold' : 'text-pano-darkGray'}`}>
+                        {feedback}
+                    </p>
+                </div>
+            );
+        };
+
+        // --- MAIN APP COMPONENT ---
+        const App = () => {
+            const [goal, setGoal] = React.useState("");
+            const [analysis, setAnalysis] = React.useState(analyzeGoal(""));
+            const [activeCategory, setActiveCategory] = React.useState('ELA');
+
+            const handleChange = (e) => {
+                const text = e.target.value;
+                setGoal(text);
+                setAnalysis(analyzeGoal(text));
+            };
+
+            const handleReset = () => {
+                setGoal("");
+                setAnalysis(analyzeGoal(""));
+            };
+
+            const insertTemplate = (templateText) => {
+                setGoal(templateText);
+                setAnalysis(analyzeGoal(templateText));
+                window.scrollTo({ top: 0, behavior: 'smooth' }); // Scroll to top on insert
+            };
+
+            const isPerfect = Object.values(analysis).every(cat => cat.score === 1);
+
+            return (
+                <div className="min-h-screen relative overflow-hidden flex flex-col">
+                    {/* Background Elements */}
+                    <div className="tangram-bg"></div>
+                   
+                    {/* Header */}
+                    <header className="bg-white border-b border-gray-200 relative z-10 flex-none">
+                        <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+                            <div className="flex items-center gap-3">
+                                {/* CSS Tangram Logo */}
+                                <div className="w-8 h-8 bg-pano-green relative overflow-hidden">
+                                    <div className="absolute top-0 left-0 w-full h-full border border-white/20"></div>
+                                    <div className="absolute bottom-0 right-0 w-2/3 h-2/3 border-l border-t border-white/30"></div>
+                                </div>
+                                <div>
+                                    <h1 className="font-header font-bold text-xl md:text-2xl text-pano-navy leading-none">SMART Goal Lab</h1>
+                                    <p className="font-body text-xs text-pano-darkGray tracking-wide">INTERVENTION PLANNING TOOL</p>
+                                </div>
+                            </div>
+                            <div className="text-right hidden md:block">
+                                <p className="text-pano-green font-header font-bold text-sm">PANORAMA EDUCATION</p>
+                            </div>
+                        </div>
+                    </header>
+
+                    <main className="max-w-7xl mx-auto px-6 py-8 relative z-10 w-full">
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                           
+                            {/* LEFT MAIN COLUMN (8 cols) */}
+                            <div className="lg:col-span-8 space-y-6">
+                               
+                                {/* Golden Sentence Frame */}
+                                <div className="bg-pano-navy text-white p-6 rounded-lg shadow-lg relative overflow-hidden">
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-pano-green opacity-20 transform translate-x-10 -translate-y-10 rotate-45"></div>
+                                    <h3 className="font-header font-bold text-pano-green mb-2 flex items-center gap-2">
+                                        <i className="fas fa-star"></i> The Golden Sentence Frame
+                                    </h3>
+                                    <p className="font-header text-lg leading-relaxed">
+                                        "By <span className="bg-pano-green/20 text-pano-green px-1 rounded font-bold">[Time]</span>, the student will increase <span className="bg-pano-green/20 text-pano-green px-1 rounded font-bold">[Skill]</span> from <span className="bg-pano-green/20 text-pano-green px-1 rounded font-bold">[Baseline]</span> to <span className="bg-pano-green/20 text-pano-green px-1 rounded font-bold">[Target]</span>."
+                                    </p>
+                                </div>
+
+                                {/* Editor Card */}
+                                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-1">
+                                    <div className="bg-gray-50 border-b border-gray-200 p-3 flex justify-between items-center rounded-t-md">
+                                        <span className="text-xs font-bold text-pano-darkGray uppercase tracking-wider">Draft Intervention Goal</span>
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={handleReset}
+                                                className="text-xs text-gray-400 hover:text-red-500 px-3 py-1.5 transition"
+                                            >
+                                                Clear
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <textarea
+                                        value={goal}
+                                        onChange={handleChange}
+                                        placeholder="Start typing here... OR select a template from the Inspiration Station below."
+                                        className="w-full p-6 text-lg font-body text-pano-navy placeholder-gray-300 focus:outline-none focus:bg-blue-50/30 transition-colors resize-none rounded-b-md min-h-[150px]"
+                                    ></textarea>
+                                    <div className="bg-white border-t border-gray-100 p-2 text-right">
+                                         <span className="text-xs text-gray-400 font-mono">{goal.length} chars</span>
+                                    </div>
+                                </div>
+
+                                {/* INSPIRATION STATION (Now moved here) */}
+                                <div className="bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden">
+                                    <div className="bg-pano-teal/10 p-4 border-b border-pano-teal/20">
+                                        <h2 className="font-header font-bold text-pano-navy flex items-center gap-2">
+                                            <i className="fas fa-lightbulb text-pano-teal"></i> Inspiration Station
+                                        </h2>
+                                        <p className="text-xs text-pano-darkGray mt-1">Browse templates based on best practices.</p>
+                                    </div>
+                                   
+                                    {/* Category Tabs */}
+                                    <div className="flex overflow-x-auto border-b border-gray-100 p-2 gap-1 bg-gray-50 scrollbar-hide">
+                                        {Object.keys(EXEMPLARS).map(cat => (
+                                            <button
+                                                key={cat}
+                                                onClick={() => setActiveCategory(cat)}
+                                                className={`px-3 py-1 text-xs font-bold rounded-full whitespace-nowrap transition ${activeCategory === cat ? 'bg-pano-teal text-white shadow-md' : 'bg-white text-pano-darkGray border border-gray-200 hover:bg-gray-100'}`}
+                                            >
+                                                {cat}
+                                            </button>
+                                        ))}
+                                    </div>
+
+                                    {/* List of Templates (2-column grid for compactness) */}
+                                    <div className="p-3 bg-gray-50/50 grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[400px] overflow-y-auto custom-scroll">
+                                        {EXEMPLARS[activeCategory].map((ex, idx) => (
+                                            <div key={idx} className="bg-white p-3 rounded border border-gray-200 hover:border-pano-teal hover:shadow-md transition group cursor-pointer" onClick={() => insertTemplate(ex.text)}>
+                                                <div className="flex justify-between items-center mb-2">
+                                                    <h4 className="font-header font-bold text-xs text-pano-navy">{ex.title}</h4>
+                                                    <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded group-hover:bg-pano-teal group-hover:text-white transition">Use</span>
+                                                </div>
+                                                <p className="font-body text-xs text-pano-darkGray leading-relaxed line-clamp-3">
+                                                    {ex.text}
+                                                </p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* RIGHT SIDEBAR COLUMN (4 cols) */}
+                            <div className="lg:col-span-4">
+                                 <div className="bg-white p-5 rounded-lg shadow-lg border-t-4 border-pano-blue sticky top-6">
+                                     <h2 className="font-header font-bold text-lg text-pano-navy mb-4 flex items-center">
+                                         <span className="bg-pano-blue text-white w-6 h-6 rounded flex items-center justify-center mr-2 text-xs">
+                                             <i className="fas fa-tachometer-alt"></i>
+                                         </span>
+                                         Goal Meter
+                                     </h2>
+
+                                     <div className="space-y-1">
+                                         <ProgressBar
+                                             score={analysis.specific.score}
+                                             label="Specific"
+                                             icon="fa-bullseye"
+                                             feedback={analysis.specific.feedback}
+                                         />
+
+                                         <ProgressBar
+                                             score={analysis.measurable.score}
+                                             label="Measurable"
+                                             icon="fa-chart-line"
+                                             feedback={analysis.measurable.feedback}
+                                         />
+
+                                         <ProgressBar
+                                             score={analysis.attainable.score}
+                                             label="Attainable"
+                                             icon="fa-mountain"
+                                             feedback={analysis.attainable.feedback}
+                                         />
+
+                                         <ProgressBar
+                                             score={analysis.relevant.score}
+                                             label="Relevant"
+                                             icon="fa-link"
+                                             feedback={analysis.relevant.feedback}
+                                         />
+
+                                         <ProgressBar
+                                             score={analysis.timeBound.score}
+                                             label="Time-Bound"
+                                             icon="fa-clock"
+                                             feedback={analysis.timeBound.feedback}
+                                         />
+                                     </div>
+
+                                     {isPerfect && (
+                                         <div className="mt-6 p-4 bg-pano-green text-white rounded-lg text-center shadow-md transform transition-all animate-pulse">
+                                             <div className="text-3xl mb-2"><i className="fas fa-medal"></i></div>
+                                             <h3 className="font-bold text-lg">Goal Ready!</h3>
+                                             <p className="text-xs opacity-90">This goal meets all SMART criteria.</p>
+                                         </div>
+                                     )}
+                                 </div>
+                            </div>
+
+                        </div>
+                    </main>
+                </div>
+            );
+        };
+
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+</body>
+</html>
