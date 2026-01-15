@@ -1,0 +1,907 @@
+import React, { useState, useEffect } from 'react';
+import { Search, CheckSquare, Square, ArrowRight, BarChart2, AlertCircle, Users, ClipboardCheck, Flag, Sparkles, MessageSquare, TrendingUp, TrendingDown, BookOpen } from 'lucide-react';
+
+// --- API Configuration ---
+// FOR GITHUB/LOCAL DEPLOYMENT: Change the line below to:
+// const apiKey = import.meta.env.VITE_GEMINI_API_KEY || "";
+const apiKey = import.meta.env.VITE_GEMINI_API_KEY || "";
+
+const callGemini = async (prompt) => {
+  try {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+        }),
+      }
+    );
+    if (!response.ok) throw new Error('API call failed');
+    const data = await response.json();
+    return data.candidates[0].content.parts[0].text;
+  } catch (error) {
+    console.error("Gemini Error:", error);
+    return "The Chief Investigator is currently unavailable. Please try again later.";
+  }
+};
+
+// --- Brand Constants ---
+const BRAND = {
+  navy: '#161242',
+  green: '#1FAA4A',
+  blue: '#006DB0',
+  lime: '#9FCC3B',
+  teal: '#00A1BB',
+  lavender: '#867EBB',
+  darkGray: '#585958',
+  lightGray: '#EEEEEE',
+  white: '#FFFFFF',
+};
+
+// --- Components ---
+
+const Card = ({ children, className = "" }) => (
+  <div className={`bg-white rounded-lg shadow-sm border border-gray-200 ${className}`}>
+    {children}
+  </div>
+);
+
+const Button = ({ onClick, children, variant = "primary", disabled = false, className = "" }) => {
+  const baseStyle = "px-4 py-2 rounded-md font-bold transition-all duration-200 flex items-center justify-center gap-2";
+  
+  // Custom styles using Panorama Brand Colors
+  const variants = {
+    primary: `text-white hover:opacity-90 disabled:opacity-50`, // Dynamic bg set in style
+    secondary: `bg-[#EEEEEE] text-[#585958] hover:bg-gray-200 disabled:bg-gray-100`,
+    outline: `border-2 border-[#161242] text-[#161242] hover:bg-[#EEEEEE]`,
+    success: `text-white hover:opacity-90`, // Dynamic bg set in style
+    ai: `text-white shadow-sm hover:opacity-90` // Dynamic bg set in style
+  };
+
+  // Inline styles for brand colors to ensure exact hex matching
+  let style = {};
+  if (variant === 'primary') style = { backgroundColor: BRAND.green };
+  if (variant === 'success') style = { backgroundColor: BRAND.navy };
+  if (variant === 'ai') style = { background: `linear-gradient(to right, ${BRAND.navy}, ${BRAND.lavender})` };
+
+  return (
+    <button 
+      onClick={onClick} 
+      disabled={disabled} 
+      className={`${baseStyle} ${variants[variant]} ${className}`}
+      style={style}
+    >
+      {children}
+    </button>
+  );
+};
+
+const LoadingSpinner = () => (
+  <div className="flex justify-center p-4">
+    <div className="animate-spin rounded-full h-6 w-6 border-b-2" style={{ borderColor: BRAND.blue }}></div>
+  </div>
+);
+
+// --- Game Data & Logic ---
+
+const GAME_STAGES = {
+  INTRO: 'intro',
+  NORMS: 'norms',
+  DASHBOARD_ELA: 'dashboard_ela',
+  DASHBOARD_ACT: 'dashboard_act',
+  DASHBOARD_ATTENDANCE: 'dashboard_attendance',
+  DASHBOARD_SOURCES: 'dashboard_sources',
+  REFLECTION: 'reflection',
+  CONCLUSION: 'conclusion'
+};
+
+const NORMS_LIST = [
+  "Focus on systems and practices, not individuals.",
+  "Look for patterns before discussing specific students.",
+  "Use asset-based, student-centered language.",
+  "Stay curious and avoid jumping to conclusions.",
+  "Keep this conversation separate from evaluation."
+];
+
+// Mock Data representing a school (simulating the PDF charts)
+// Using Brand Colors for visualizations
+const ELA_DATA = {
+  // When filtering for LOW Course Grades (Red/Yellow), what do assessments look like?
+  lowGradesProfile: [
+    { label: "Not Meeting (Assess)", value: 60, color: "bg-red-500" }, // Keep Red for 'Not Meeting' standard
+    { label: "Partially Meeting", value: 25, color: "bg-[#9FCC3B]" }, // Lime
+    { label: "Meeting (Assess)", value: 10, color: "bg-[#1FAA4A]" }, // Green (Hidden Gems)
+    { label: "Exceeding (Assess)", value: 5, color: "bg-[#00A1BB]" }  // Teal (Hidden Gems)
+  ],
+  // When filtering for HIGH Course Grades (Green), what do assessments look like?
+  highGradesProfile: [
+    { label: "Not Meeting (Assess)", value: 15, color: "bg-red-500" }, // The Mirage
+    { label: "Partially Meeting", value: 20, color: "bg-[#9FCC3B]" }, // Lime
+    { label: "Meeting (Assess)", value: 40, color: "bg-[#1FAA4A]" }, // Green
+    { label: "Exceeding (Assess)", value: 25, color: "bg-[#00A1BB]" } // Teal
+  ]
+};
+
+const ATTENDANCE_DATA = {
+  // Filtering for Chronically Absent
+  chronicAbsentProfile: [
+    { label: "Failing Courses", value: 65, color: "bg-red-500" }, 
+    { label: "Passing but struggling", value: 20, color: "bg-[#9FCC3B]" }, // Lime
+    { label: "Passing/Strong Grades", value: 15, color: "bg-[#1FAA4A]" } // Green (The Anomaly)
+  ]
+};
+
+// --- Sub-Components ---
+
+const Intro = ({ onStart }) => (
+  <div className="flex flex-col items-center justify-center h-full max-w-2xl mx-auto text-center p-6 space-y-6 animate-fade-in">
+    <div className="p-4 rounded-full bg-white shadow-md">
+      {/* Using Panorama Navy for the icon */}
+      <Search className="w-12 h-12" style={{ color: BRAND.navy }} />
+    </div>
+    <h1 className="text-4xl font-bold" style={{ color: BRAND.navy }}>Signal vs. Noise</h1>
+    <h2 className="text-xl" style={{ color: BRAND.darkGray }}>A Grading Practices Investigation</h2>
+    <p className="leading-relaxed text-lg" style={{ color: BRAND.darkGray }}>
+      Major decisions hinge on grades: college admissions, financial aid, and life trajectories. 
+      But research shows a growing mismatch between grades and standardized measures.
+    </p>
+    {/* Using Lime for the highlight box background to stay on brand */}
+    <div className="p-4 border-l-4 text-left text-sm" style={{ backgroundColor: '#F9FBF6', borderColor: BRAND.lime, color: BRAND.navy }}>
+      <strong>Mission Objective:</strong> Identify system-level opportunities to strengthen Tier 1 grading practices so grades more accurately reflect student mastery.
+    </div>
+    <Button onClick={onStart} className="w-full md:w-auto text-lg px-8">
+      Start Investigation (Est. 10 Mins) <ArrowRight className="w-5 h-5" />
+    </Button>
+  </div>
+);
+
+const Norms = ({ onNext }) => {
+  const [normsChecked, setNormsChecked] = useState([]);
+  const allChecked = normsChecked.length === NORMS_LIST.length;
+
+  const toggleNorm = (index) => {
+    if (normsChecked.includes(index)) {
+      setNormsChecked(normsChecked.filter(i => i !== index));
+    } else {
+      setNormsChecked([...normsChecked, index]);
+    }
+  };
+
+  return (
+    <div className="max-w-2xl mx-auto p-6 space-y-6">
+      <h2 className="text-2xl font-bold flex items-center gap-2" style={{ color: BRAND.navy }}>
+        <ClipboardCheck style={{ color: BRAND.green }} /> 
+        Investigator's Code
+      </h2>
+      <p style={{ color: BRAND.darkGray }}>Before viewing sensitive data, your team must align on shared norms.</p>
+      
+      <div className="space-y-3">
+        {NORMS_LIST.map((norm, index) => (
+          <div 
+            key={index}
+            onClick={() => toggleNorm(index)}
+            className={`p-4 rounded-lg border-2 cursor-pointer transition-all flex items-center gap-3`}
+            style={{
+              borderColor: normsChecked.includes(index) ? BRAND.green : '#E5E7EB',
+              backgroundColor: normsChecked.includes(index) ? '#F0FDF4' : 'white'
+            }}
+          >
+            {normsChecked.includes(index) ? (
+              <CheckSquare className="w-6 h-6 flex-shrink-0" style={{ color: BRAND.green }} />
+            ) : (
+              <Square className="w-6 h-6 text-gray-300 flex-shrink-0" />
+            )}
+            <span className={`font-medium`} style={{ color: normsChecked.includes(index) ? BRAND.navy : BRAND.darkGray }}>
+              {norm}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      <Button 
+        onClick={onNext} 
+        disabled={!allChecked}
+        className="w-full mt-6"
+        variant="primary"
+      >
+        {allChecked ? "Access Data Vault" : "Accept All Norms to Proceed"}
+      </Button>
+    </div>
+  );
+};
+
+const DashboardELA = ({ onNext, setScore }) => {
+  const [activeFilter, setActiveFilter] = useState(null); // 'low', 'high', or null
+  const [insightFound, setInsightFound] = useState(false);
+  const [feedback, setFeedback] = useState(null); 
+  const [aiAnalysis, setAiAnalysis] = useState(null);
+  const [loadingAi, setLoadingAi] = useState(false);
+
+  useEffect(() => {
+      setInsightFound(false);
+      setFeedback(null);
+      setAiAnalysis(null);
+  }, [activeFilter]);
+
+  const handleConsultAI = async () => {
+    if (!activeFilter) return;
+    setLoadingAi(true);
+    const scenario = activeFilter === 'low' 
+      ? "students who are failing their course (Low Grades) but are Meeting/Exceeding standards on the state test (High Proficiency). We call these 'Hidden Gems'."
+      : "students who have High Grades (A/B) but are Not Meeting standards on the state test. We call this 'The Mirage'.";
+      
+    const prompt = `You are a Chief Investigator for School Grading Practices. 
+    Explain simply (in 2-3 bullet points) why a school might see ${scenario}. 
+    Focus on potential grading policy issues (like zeros, late work, participation points, extra credit).`;
+    
+    const result = await callGemini(prompt);
+    setAiAnalysis(result);
+    setLoadingAi(false);
+  };
+
+  const handleSelection = (isCorrect, correctMsg, errorMsg) => {
+    if (isCorrect) {
+      setFeedback({ isError: false, message: correctMsg });
+      setInsightFound(true);
+      setScore(s => s + 1);
+    } else {
+      setFeedback({ isError: true, message: errorMsg });
+      setInsightFound(false);
+    }
+  };
+
+  return (
+    <div className="max-w-4xl mx-auto p-4 space-y-6">
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold" style={{ color: BRAND.navy }}>Case File 1: Local ELA Data</h2>
+        <span className="px-3 py-1 rounded-full text-sm font-bold text-white" style={{ backgroundColor: BRAND.blue }}>Course Grades vs. Assessment</span>
+      </div>
+
+      <p className="mb-4" style={{ color: BRAND.darkGray }}>
+        Use the filters below to investigate the relationship between <strong>Coursework Grades</strong> (Teacher assigned) and <strong>Standardized Assessments</strong> (State tests).
+      </p>
+
+      <div className="grid md:grid-cols-2 gap-8">
+        {/* Controls */}
+        <Card className="p-6 space-y-4">
+          <h3 className="font-bold text-lg flex items-center gap-2" style={{ color: BRAND.navy }}>
+            <Users className="w-5 h-5" style={{ color: BRAND.darkGray }} /> Student Filters
+          </h3>
+          <p className="text-sm" style={{ color: BRAND.darkGray }}>Isolate a student group to see their assessment data.</p>
+          
+          <div className="space-y-3">
+            <button 
+              onClick={() => setActiveFilter('low')}
+              className={`w-full p-4 rounded-lg border-2 text-left transition-all ${activeFilter === 'low' ? 'bg-red-50 ring-2 ring-red-200' : 'hover:bg-gray-50'}`}
+              style={{ borderColor: activeFilter === 'low' ? 'red' : '#E5E7EB' }}
+            >
+              <div className="font-bold text-red-700">Filter: Non-Passing Grades</div>
+              <div className="text-xs text-red-600">Students with D/F in Coursework</div>
+            </button>
+
+            <button 
+              onClick={() => setActiveFilter('high')}
+              className={`w-full p-4 rounded-lg border-2 text-left transition-all ${activeFilter === 'high' ? 'bg-green-50 ring-2 ring-green-200' : 'hover:bg-gray-50'}`}
+              style={{ borderColor: activeFilter === 'high' ? BRAND.green : '#E5E7EB' }}
+            >
+              <div className="font-bold" style={{ color: BRAND.green }}>Filter: Passing/Strong Grades</div>
+              <div className="text-xs" style={{ color: BRAND.green }}>Students with A/B/C in Coursework</div>
+            </button>
+          </div>
+        </Card>
+
+        {/* Visualization */}
+        <Card className="p-6 flex flex-col justify-center min-h-[300px]">
+          {!activeFilter ? (
+            <div className="text-center text-gray-400">
+              <BarChart2 className="w-16 h-16 mx-auto mb-2 opacity-20" />
+              <p>Select a filter to visualize Assessment Data</p>
+            </div>
+          ) : (
+            <div className="space-y-4 animate-fade-in">
+              <h3 className="font-bold text-center mb-4" style={{ color: BRAND.navy }}>
+                Assessment Results for <span className={activeFilter === 'low' ? 'text-red-600' : ''} style={{ color: activeFilter === 'high' ? BRAND.green : undefined }}>
+                  {activeFilter === 'low' ? "Struggling" : "High Performing"}
+                </span> Students
+              </h3>
+              
+              {(activeFilter === 'low' ? ELA_DATA.lowGradesProfile : ELA_DATA.highGradesProfile).map((item, idx) => (
+                <div key={idx} className="space-y-1">
+                  <div className="flex justify-between text-xs font-medium" style={{ color: BRAND.darkGray }}>
+                    <span>{item.label}</span>
+                    <span>{item.value}%</span>
+                  </div>
+                  <div className="w-full bg-gray-100 rounded-full h-4 overflow-hidden">
+                    <div 
+                      className={`h-full transition-all duration-1000 ease-out ${item.color}`}
+                      style={{ width: `${item.value}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+      </div>
+
+      {/* Insight Prompt */}
+      {activeFilter && (
+        <div className="mt-6 p-6 bg-white border rounded-xl animate-slide-up shadow-sm" style={{ borderColor: BRAND.lightGray }}>
+          <div className="flex justify-between items-start mb-4">
+            <h3 className="text-lg font-bold flex items-center gap-2" style={{ color: BRAND.navy }}>
+              <Search className="w-5 h-5" style={{ color: BRAND.blue }} />
+              Detective's Log: What do you see?
+            </h3>
+            <Button variant="ai" onClick={handleConsultAI} disabled={loadingAi} className="text-xs px-3 py-1">
+              {loadingAi ? "Consulting..." : "✨ Consult Chief Investigator"}
+            </Button>
+          </div>
+
+          {/* AI Analysis Box */}
+          {aiAnalysis && (
+            <div className="mb-4 p-4 rounded-lg animate-fade-in text-sm" style={{ backgroundColor: '#F0F9FF', borderColor: BRAND.blue, borderWidth: '1px', color: BRAND.navy }}>
+              <h4 className="font-bold flex items-center gap-2 mb-2" style={{ color: BRAND.blue }}>
+                <Sparkles className="w-4 h-4" /> Chief's Hypothesis:
+              </h4>
+              <div className="prose prose-sm max-w-none whitespace-pre-line">
+                {aiAnalysis}
+              </div>
+            </div>
+          )}
+
+          {/* Feedback Banner */}
+          {feedback && (
+             <div className={`mb-4 p-4 rounded-md border-l-4 ${feedback.isError ? 'bg-orange-50 border-orange-500 text-orange-800' : 'bg-green-50 border-green-500 text-green-800'} animate-fade-in`}>
+               <div className="flex items-start gap-3">
+                 {feedback.isError ? <Flag className="w-5 h-5 flex-shrink-0" /> : <CheckSquare className="w-5 h-5 flex-shrink-0" />}
+                 <div>
+                   <span className="font-bold block mb-1">{feedback.isError ? "Investigator Flag:" : "Correct Analysis:"}</span>
+                   {feedback.message}
+                 </div>
+               </div>
+             </div>
+          )}
+          
+          {activeFilter === 'low' ? (
+            <div className="space-y-2">
+              <p className="mb-4 text-sm" style={{ color: BRAND.darkGray }}>Look at the Green bars in the assessment data above.</p>
+              
+              <button 
+                onClick={() => handleSelection(false, "", "Incorrect. Look closely at the data bars. If grades and test scores were perfectly aligned, students with low grades would ONLY have red/yellow test scores. But we see green bars here.")}
+                className={`w-full text-left p-3 border rounded-md text-sm transition-colors ${feedback?.isError ? 'bg-orange-50 border-orange-200' : 'bg-white hover:bg-gray-50'}`}
+              >
+                A. Grades and test scores are perfectly aligned.
+              </button>
+
+              <button 
+                onClick={() => handleSelection(true, "Correct. These are our 'Hidden Gems'. They have mastered the content according to the state (Green bar), but are failing the class. We need to investigate why.", "")}
+                className="w-full text-left p-3 bg-white border hover:bg-gray-50 rounded-md text-sm transition-colors font-bold"
+                style={{ color: BRAND.navy }}
+              >
+                B. "Hidden Gems": Some students are failing the class but are proficient on the state test.
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <p className="mb-4 text-sm" style={{ color: BRAND.darkGray }}>Look at the Red/Yellow bars in the assessment data above.</p>
+              
+              <button 
+                onClick={() => handleSelection(true, "Correct. This is 'The Mirage'. These students look like they are doing well in the grade book, but the assessment reveals gaps in mastery. Are grades reflecting participation instead of learning?", "")}
+                className="w-full text-left p-3 bg-white border hover:bg-gray-50 rounded-md text-sm transition-colors font-bold"
+                style={{ color: BRAND.navy }}
+              >
+                A. "The Mirage": Some students have high grades but are not meeting expectations on the test.
+              </button>
+
+              <button 
+                onClick={() => handleSelection(false, "", "Incorrect. Look closely at the Red bars in the chart. If high grades guaranteed high scores, we would see 0% in the 'Not Meeting' category. But we see 15%.")}
+                className={`w-full text-left p-3 border rounded-md text-sm transition-colors ${feedback?.isError ? 'bg-orange-50 border-orange-200' : 'bg-white hover:bg-gray-50'}`}
+              >
+                B. High grades always guarantee high test scores.
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {insightFound && (
+        <div className="flex justify-end animate-fade-in">
+           <Button onClick={onNext} variant="success">
+             Next Case File <ArrowRight className="w-4 h-4" />
+           </Button>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const DashboardACT = ({ onNext }) => {
+  const [feedback, setFeedback] = useState(null);
+  const [insightFound, setInsightFound] = useState(false);
+
+  const handleSelection = (isCorrect, correctMsg, errorMsg) => {
+    if (isCorrect) {
+      setFeedback({ isError: false, message: correctMsg });
+      setInsightFound(true);
+    } else {
+      setFeedback({ isError: true, message: errorMsg });
+      setInsightFound(false);
+    }
+  };
+
+  return (
+    <div className="max-w-4xl mx-auto p-4 space-y-6">
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold" style={{ color: BRAND.navy }}>Case File 2: The National Trend</h2>
+        <span className="px-3 py-1 rounded-full text-sm font-bold text-white" style={{ backgroundColor: BRAND.teal }}>National ACT vs. GPA</span>
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-8 items-center">
+        <Card className="p-6">
+          <h3 className="font-bold mb-4" style={{ color: BRAND.navy }}>Data Trend: 2018 - 2021</h3>
+          <div className="space-y-6">
+            <div className="p-4 bg-red-50 rounded-lg border border-red-100">
+              <div className="flex justify-between items-center mb-2">
+                <span className="font-bold text-red-800 flex gap-2"><TrendingDown className="w-5 h-5"/> Avg. ACT Score</span>
+                <span className="text-sm text-red-600">Max 36</span>
+              </div>
+              <div className="flex justify-between text-lg font-mono font-bold text-red-900">
+                <span>22.51 (2018)</span>
+                <ArrowRight className="w-5 h-5 opacity-50"/>
+                <span>21.90 (2021)</span>
+              </div>
+            </div>
+
+            <div className="p-4 bg-green-50 rounded-lg border border-green-100">
+              <div className="flex justify-between items-center mb-2">
+                <span className="font-bold text-green-800 flex gap-2"><TrendingUp className="w-5 h-5"/> Avg. HS GPA</span>
+                <span className="text-sm text-green-600">Max 4.0</span>
+              </div>
+              <div className="flex justify-between text-lg font-mono font-bold text-green-900">
+                <span>3.48 (2018)</span>
+                <ArrowRight className="w-5 h-5 opacity-50"/>
+                <span>3.59 (2021)</span>
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        <div className="space-y-4">
+          <p style={{ color: BRAND.darkGray }}>
+            While standardized test scores (ACT/SAT) have declined, High School GPAs have risen during the same period.
+          </p>
+
+          <h4 className="font-bold" style={{ color: BRAND.navy }}>What does this divergence most likely indicate?</h4>
+
+           {feedback && (
+             <div className={`mb-4 p-4 rounded-md border-l-4 ${feedback.isError ? 'bg-orange-50 border-orange-500 text-orange-800' : 'bg-green-50 border-green-500 text-green-800'} animate-fade-in`}>
+               <div className="flex items-start gap-3">
+                 {feedback.isError ? <Flag className="w-5 h-5 flex-shrink-0" /> : <CheckSquare className="w-5 h-5 flex-shrink-0" />}
+                 <div>
+                   <span className="font-bold block mb-1">{feedback.isError ? "Investigator Flag:" : "Correct Analysis:"}</span>
+                   {feedback.message}
+                 </div>
+               </div>
+             </div>
+          )}
+
+          <button 
+            onClick={() => handleSelection(false, "", "Incorrect. While standardized tests have flaws, a declining score suggests mastery is NOT increasing, yet grades (GPA) are going up. This contradiction is the key.")}
+            className={`w-full text-left p-4 border rounded-lg hover:shadow-md transition-all group ${feedback?.isError ? 'bg-orange-50' : 'bg-white'}`}
+          >
+            <span className="font-bold block mb-1 group-hover:text-blue-600" style={{ color: BRAND.navy }}>Students are mastering more content, but testing worse.</span>
+          </button>
+
+          <button 
+            onClick={() => handleSelection(true, "Correct. This phenomenon, known as 'Grade Inflation,' suggests that grades are rising due to non-academic factors (behavior, participation, extra credit) rather than increased content mastery.", "")}
+            className="w-full text-left p-4 bg-white border rounded-lg hover:shadow-md transition-all group"
+          >
+            <span className="font-bold block mb-1 group-hover:text-blue-600" style={{ color: BRAND.navy }}>Grade Inflation is occurring.</span>
+            <span className="text-sm" style={{ color: BRAND.darkGray }}>Grades are increasing due to non-academic factors, masking gaps in mastery.</span>
+          </button>
+
+           {insightFound && (
+            <div className="flex justify-end pt-2 animate-fade-in">
+              <Button onClick={onNext} variant="success">
+                Next Case File <ArrowRight className="w-4 h-4" />
+              </Button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const DashboardAttendance = ({ onNext }) => {
+    const [feedback, setFeedback] = useState(null);
+    const [insightFound, setInsightFound] = useState(false);
+
+    const handleAnswer = (isCorrect, correctMsg, errorMsg) => {
+        if (isCorrect) {
+            setFeedback({ isError: false, message: correctMsg });
+            setInsightFound(true);
+        } else {
+            setFeedback({ isError: true, message: errorMsg });
+            setInsightFound(false);
+        }
+    }
+
+    return (
+        <div className="max-w-4xl mx-auto p-4 space-y-6">
+            <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold" style={{ color: BRAND.navy }}>Case File 3: Attendance Cross-Reference</h2>
+            <span className="px-3 py-1 rounded-full text-sm font-bold text-white" style={{ backgroundColor: BRAND.lavender }}>Attendance vs. Grades</span>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-8 items-start">
+                <Card className="p-6">
+                    <h3 className="font-bold mb-4" style={{ color: BRAND.darkGray }}>Cohort: Chronically Absent Students</h3>
+                    <div className="space-y-4">
+                        {ATTENDANCE_DATA.chronicAbsentProfile.map((item, idx) => (
+                            <div key={idx} className="space-y-1">
+                                <div className="flex justify-between text-sm font-medium" style={{ color: BRAND.darkGray }}>
+                                    <span>{item.label}</span>
+                                    <span>{item.value}%</span>
+                                </div>
+                                <div className="w-full bg-gray-100 rounded-full h-6 overflow-hidden">
+                                <div 
+                                    className={`h-full flex items-center justify-end px-2 text-white text-xs font-bold ${item.color}`}
+                                    style={{ width: `${item.value}%` }}
+                                >
+                                    {item.value}%
+                                </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </Card>
+
+                <div className="space-y-4">
+                    <div className="p-4 rounded-lg border-l-4" style={{ backgroundColor: '#F0F9FF', borderColor: BRAND.blue }}>
+                        <h4 className="font-bold flex items-center gap-2" style={{ color: BRAND.navy }}>
+                            <AlertCircle className="w-5 h-5"/> Observation Required
+                        </h4>
+                        <p className="text-sm mt-2" style={{ color: BRAND.darkGray }}>
+                            You are looking at students who missed 10%+ of school days.
+                        </p>
+                    </div>
+                    
+                    <h4 className="font-bold" style={{ color: BRAND.navy }}>What is the most critical question for a "Signal vs. Noise" detective?</h4>
+                    
+                    {feedback && (
+                        <div className={`p-4 rounded-md border-l-4 ${feedback.isError ? 'bg-orange-50 border-orange-500 text-orange-800' : 'bg-green-50 border-green-500 text-green-800'} animate-fade-in`}>
+                            <div className="flex items-start gap-3">
+                                {feedback.isError ? <Flag className="w-5 h-5 flex-shrink-0" /> : <CheckSquare className="w-5 h-5 flex-shrink-0" />}
+                                <div>
+                                <span className="font-bold block mb-1">{feedback.isError ? "Investigator Flag:" : "Excellent Deduction:"}</span>
+                                {feedback.message}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    <button 
+                        onClick={() => handleAnswer(true, "Correct. This is the anomaly! If they aren't in class but have an A, are we grading mastery (which is good) or was the work just easy to send home (low rigor)?", "")}
+                        className="w-full text-left p-4 bg-white border rounded-lg hover:shadow-md transition-all group"
+                    >
+                        <span className="font-bold block mb-1 group-hover:text-blue-600" style={{ color: BRAND.navy }}>Why are 15% of absent students still getting As?</span>
+                        <span className="text-sm" style={{ color: BRAND.darkGray }}>Is the grade reflecting mastery, or was the work just easy to make up?</span>
+                    </button>
+                    
+                    <button 
+                        onClick={() => handleAnswer(false, "", "While this is a valid concern, it is an expected pattern. Students who miss school often fail. As a detective looking for 'System Noise', this correlation doesn't reveal a grading inconsistency. Look for the anomaly.")}
+                        className="w-full text-left p-4 bg-white border rounded-lg hover:shadow-md transition-all group"
+                    >
+                        <span className="font-bold block mb-1 group-hover:text-blue-600" style={{ color: BRAND.navy }}>Why do absent students fail?</span>
+                        <span className="text-sm" style={{ color: BRAND.darkGray }}>This seems like a straightforward correlation with missed instruction.</span>
+                    </button>
+
+                     {insightFound && (
+                        <div className="flex justify-end pt-2 animate-fade-in">
+                        <Button onClick={onNext} variant="success">
+                            Analyze Findings <ArrowRight className="w-4 h-4" />
+                        </Button>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const DashboardSources = ({ onNext }) => {
+  const [feedback, setFeedback] = useState(null);
+  const [insightFound, setInsightFound] = useState(false);
+
+  const handleSelection = (isCorrect, correctMsg, errorMsg) => {
+    if (isCorrect) {
+      setFeedback({ isError: false, message: correctMsg });
+      setInsightFound(true);
+    } else {
+      setFeedback({ isError: true, message: errorMsg });
+      setInsightFound(false);
+    }
+  };
+
+  return (
+    <div className="max-w-4xl mx-auto p-4 space-y-6">
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold" style={{ color: BRAND.navy }}>Case File 4: The Root Cause</h2>
+        <span className="px-3 py-1 rounded-full text-sm font-bold text-white" style={{ backgroundColor: BRAND.lime }}>Theory of Discrepancy</span>
+      </div>
+
+      <p className="leading-relaxed" style={{ color: BRAND.darkGray }}>
+        Research from Norway (Arencibia Alemán et al., 2024) shows that even in systems where exams and grades are legally required to align, discrepancies persist. 
+        In the U.S., where alignment is looser, the problem is worse.
+      </p>
+
+      <Card className="p-6">
+        <h3 className="font-bold mb-4" style={{ color: BRAND.navy }}>According to Willingham's Framework, what is the largest source of discrepancy?</h3>
+        
+        {feedback && (
+            <div className={`mb-4 p-4 rounded-md border-l-4 ${feedback.isError ? 'bg-orange-50 border-orange-500 text-orange-800' : 'bg-green-50 border-green-500 text-green-800'} animate-fade-in`}>
+              <div className="flex items-start gap-3">
+                {feedback.isError ? <Flag className="w-5 h-5 flex-shrink-0" /> : <CheckSquare className="w-5 h-5 flex-shrink-0" />}
+                <div>
+                  <span className="font-bold block mb-1">{feedback.isError ? "Investigator Flag:" : "Correct Analysis:"}</span>
+                  {feedback.message}
+                </div>
+              </div>
+            </div>
+        )}
+
+        <div className="grid gap-3">
+          <button 
+            onClick={() => handleSelection(false, "", "Incorrect. While Systematic Errors (like teacher bias) do contribute, research identifies a more fundamental structural issue as the primary driver.")}
+            className="w-full text-left p-4 border rounded-lg hover:shadow-sm transition-all bg-white"
+          >
+            <span className="font-bold block" style={{ color: BRAND.navy }}>Measurement Error</span>
+            <span className="text-sm" style={{ color: BRAND.darkGray }}>Simple teacher mistakes or bias.</span>
+          </button>
+
+          <button 
+            onClick={() => handleSelection(true, "Correct. 'Content Differences' means the grade measures things the exam does not. In many classrooms, grades include behavior, participation, and effort ('Non-academic factors'), while the exam only measures content mastery. This is the root of the noise.", "")}
+            className="w-full text-left p-4 border rounded-lg hover:shadow-sm transition-all bg-white"
+          >
+            <span className="font-bold block" style={{ color: BRAND.navy }}>Content Differences</span>
+            <span className="text-sm" style={{ color: BRAND.darkGray }}>Grades measuring non-academic factors (behavior, participation) vs. exams measuring only content.</span>
+          </button>
+          
+          <button 
+            onClick={() => handleSelection(false, "", "Incorrect. Situational differences (like a bad test day) account for some variance, but they don't explain the systematic inflation of grades we see in the data.")}
+            className="w-full text-left p-4 border rounded-lg hover:shadow-sm transition-all bg-white"
+          >
+            <span className="font-bold block" style={{ color: BRAND.navy }}>Situational Differences</span>
+            <span className="text-sm" style={{ color: BRAND.darkGray }}>The student just had a bad day on the test.</span>
+          </button>
+        </div>
+      </Card>
+      
+      {insightFound && (
+        <div className="flex justify-end pt-2 animate-fade-in">
+          <Button onClick={onNext} variant="success">
+            Synthesize Findings <ArrowRight className="w-4 h-4" />
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const Reflection = ({ onNext }) => {
+  const [selectedPractice, setSelectedPractice] = useState(null);
+  const [aiAdvice, setAiAdvice] = useState(null);
+  const [loadingAi, setLoadingAi] = useState(false);
+
+  const handleGetStrategy = async () => {
+    if (!selectedPractice) return;
+    setLoadingAi(true);
+    const prompt = `As a master educator and grading consultant, suggest 3 specific, actionable, and short Tier 1 teaching/grading strategies to address: "${selectedPractice}".
+    Keep the tone encouraging but practical. Use bullet points.`;
+    
+    const result = await callGemini(prompt);
+    setAiAdvice(result);
+    setLoadingAi(false);
+  };
+
+  return (
+    <div className="max-w-3xl mx-auto p-4 space-y-6 animate-fade-in">
+      <h2 className="text-3xl font-bold text-center" style={{ color: BRAND.navy }}>Case Synthesis</h2>
+      <p className="text-center" style={{ color: BRAND.darkGray }}>
+        You've identified "Hidden Gems", "Mirages", and the impact of Grade Inflation. 
+        Research suggests targeted training is the solution.
+      </p>
+
+      <Card className="p-6 bg-white border-gray-300">
+        <h3 className="font-bold text-lg mb-4" style={{ color: BRAND.navy }}>Complete the System Diagnosis:</h3>
+        <p className="text-xl font-serif italic mb-6" style={{ color: BRAND.darkGray }}>
+          "The discrepancy between our grades and mastery signals is primarily caused by..."
+        </p>
+
+        <div className="grid gap-3">
+           <button className="p-3 bg-white border rounded text-left hover:bg-gray-50 focus:ring-2 focus:ring-blue-500" style={{ color: BRAND.darkGray }}>
+             ...a lack of teacher training on accurate grading practices.
+           </button>
+           <button className="p-3 bg-white border rounded text-left hover:bg-gray-50 focus:ring-2 focus:ring-blue-500" style={{ color: BRAND.darkGray }}>
+             ...mixing non-academic factors (behavior) into academic reports.
+           </button>
+           <button className="p-3 bg-white border rounded text-left hover:bg-gray-50 focus:ring-2 focus:ring-blue-500" style={{ color: BRAND.darkGray }}>
+             ...grade inflation masking gaps in fundamental understanding.
+           </button>
+        </div>
+      </Card>
+
+      <div className="pt-6">
+        <h3 className="font-bold mb-4" style={{ color: BRAND.navy }}>Select One Action Step (Tier 1 Practice):</h3>
+        <div className="grid sm:grid-cols-2 gap-4">
+          {[
+            "Implement Teacher Training on Grading",
+            "Separate Behavior from Academic Grade",
+            "Calibrate Grading Expectations (Rubrics)",
+            "Revise Late Work Policies"
+          ].map((practice, i) => (
+            <button 
+              key={i}
+              onClick={() => { setSelectedPractice(practice); setAiAdvice(null); }}
+              className={`p-4 rounded-lg border-2 font-medium transition-all ${selectedPractice === practice ? 'bg-green-50 text-green-800' : 'hover:border-blue-300'}`}
+              style={{ 
+                borderColor: selectedPractice === practice ? BRAND.green : '#E5E7EB',
+                color: selectedPractice === practice ? BRAND.navy : BRAND.darkGray
+              }}
+            >
+              {practice}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* AI Strategy Generator */}
+      {selectedPractice && (
+        <div className="mt-6 flex flex-col gap-4">
+             <Button variant="ai" onClick={handleGetStrategy} disabled={loadingAi} className="self-center w-full md:w-auto">
+               {loadingAi ? <LoadingSpinner /> : (
+                 <>
+                   <Sparkles className="w-5 h-5" /> Generate Strategies for Selected Action
+                 </>
+               )}
+             </Button>
+
+            {aiAdvice && (
+                <div className="p-6 rounded-lg animate-fade-in shadow-inner" style={{ backgroundColor: '#F0F9FF', borderColor: BRAND.lavender, borderWidth: '1px' }}>
+                    <h4 className="font-bold flex items-center gap-2 mb-4 text-lg" style={{ color: BRAND.navy }}>
+                        <MessageSquare className="w-5 h-5" /> Suggested Intervention Strategies:
+                    </h4>
+                    <div className="prose max-w-none whitespace-pre-line" style={{ color: BRAND.darkGray }}>
+                        {aiAdvice}
+                    </div>
+                </div>
+            )}
+        </div>
+      )}
+
+      <div className="flex justify-center pt-6">
+         <Button 
+           disabled={!selectedPractice} 
+           onClick={onNext} 
+           className="w-full md:w-1/2 text-lg"
+           variant="primary"
+          >
+           Finalize Action Plan
+         </Button>
+      </div>
+    </div>
+  );
+};
+
+const Conclusion = ({ onRestart }) => (
+  <div className="flex flex-col items-center justify-center h-full max-w-2xl mx-auto text-center p-6 space-y-6 animate-fade-in">
+    <div className="p-6 rounded-full" style={{ backgroundColor: '#F0FDF4' }}>
+      <CheckSquare className="w-16 h-16" style={{ color: BRAND.green }} />
+    </div>
+    <h1 className="text-4xl font-bold" style={{ color: BRAND.navy }}>Investigation Complete</h1>
+    <p className="text-lg" style={{ color: BRAND.darkGray }}>
+      You have successfully identified misalignment in the grading system and proposed a Tier 1 intervention.
+    </p>
+    <Card className="bg-white p-6 w-full text-left">
+      <h3 className="font-bold mb-2" style={{ color: BRAND.navy }}>Key Takeaways from the Data:</h3>
+      <ul className="list-disc list-inside space-y-2" style={{ color: BRAND.darkGray }}>
+        <li><strong>The Discrepancy:</strong> Grades are increasingly diverging from standardized measures (Grade Inflation).</li>
+        <li><strong>The Source:</strong> Content Differences—specifically, the inclusion of non-academic factors like behavior in grades.</li>
+        <li><strong>The Solution:</strong> Teacher training and clearer policies that separate behavior from mastery.</li>
+      </ul>
+    </Card>
+    <Button onClick={onRestart} variant="outline">
+      Restart Simulation
+    </Button>
+  </div>
+);
+
+// --- Main App Component ---
+
+const App = () => {
+  const [stage, setStage] = useState(GAME_STAGES.INTRO);
+  const [score, setScore] = useState(0);
+
+  // Global Styles for Fonts and Branding
+  useEffect(() => {
+    // Inject custom CSS variables or global styles if needed, though most is handled inline or via Tailwind
+    document.body.style.backgroundColor = BRAND.lightGray;
+    document.body.style.fontFamily = "'Proxima Nova', Arial, sans-serif";
+  }, []);
+
+  // --- Main Render Router ---
+
+  return (
+    <div className="min-h-screen text-gray-900 font-sans selection:bg-blue-200" style={{ backgroundColor: BRAND.lightGray }}>
+      {/* Header */}
+      <header className="px-6 py-4 flex justify-between items-center sticky top-0 z-10 shadow-sm" style={{ backgroundColor: BRAND.navy, color: BRAND.white }}>
+        <div className="flex items-center gap-2 font-bold text-xl">
+          {/* Logo representation using brand shapes/icons */}
+          <div className="flex gap-1">
+             <div className="w-3 h-3 bg-[#1FAA4A] rounded-sm"></div>
+             <div className="w-3 h-3 bg-[#006DB0] rounded-sm"></div>
+             <div className="w-3 h-3 bg-[#9FCC3B] rounded-sm"></div>
+          </div>
+          <span className="hidden sm:inline">Panorama Sim:</span> Grading Detective
+        </div>
+        <div className="text-sm font-medium opacity-90">
+           {stage === GAME_STAGES.INTRO ? 'Briefing' : 
+            stage === GAME_STAGES.CONCLUSION ? 'Complete' : 'Investigation In Progress'}
+        </div>
+      </header>
+
+      {/* Main Content Area */}
+      <main className="container mx-auto py-8 px-4 min-h-[80vh] flex flex-col justify-center">
+        {stage === GAME_STAGES.INTRO && 
+          <Intro onStart={() => setStage(GAME_STAGES.NORMS)} />}
+        
+        {stage === GAME_STAGES.NORMS && 
+          <Norms onNext={() => setStage(GAME_STAGES.DASHBOARD_ELA)} />}
+        
+        {stage === GAME_STAGES.DASHBOARD_ELA && 
+          <DashboardELA onNext={() => setStage(GAME_STAGES.DASHBOARD_ACT)} setScore={setScore} />}
+
+        {stage === GAME_STAGES.DASHBOARD_ACT && 
+          <DashboardACT onNext={() => setStage(GAME_STAGES.DASHBOARD_ATTENDANCE)} />}
+        
+        {stage === GAME_STAGES.DASHBOARD_ATTENDANCE && 
+          <DashboardAttendance onNext={() => setStage(GAME_STAGES.DASHBOARD_SOURCES)} />}
+
+        {stage === GAME_STAGES.DASHBOARD_SOURCES && 
+          <DashboardSources onNext={() => setStage(GAME_STAGES.REFLECTION)} />}
+        
+        {stage === GAME_STAGES.REFLECTION && 
+          <Reflection onNext={() => setStage(GAME_STAGES.CONCLUSION)} />}
+        
+        {stage === GAME_STAGES.CONCLUSION && 
+          <Conclusion onRestart={() => window.location.reload()} />}
+      </main>
+
+      {/* Footer */}
+      <footer className="text-center py-6 text-sm" style={{ color: BRAND.darkGray }}>
+        Based on "What Do Our Grades Communicate?" - A Student Success Data Review
+      </footer>
+
+      {/* CSS Animations */}
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+          animation: fadeIn 0.5s ease-out forwards;
+        }
+        .animate-slide-up {
+          animation: fadeIn 0.7s ease-out forwards;
+        }
+      `}</style>
+    </div>
+  );
+};
+
+export default App;
