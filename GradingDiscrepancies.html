@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Search, CheckSquare, Square, ArrowRight, BarChart2, AlertCircle, Users, ClipboardCheck, Flag, Sparkles, MessageSquare, TrendingUp, TrendingDown, BookOpen } from 'lucide-react';
 
 // --- API Configuration ---
-// FOR GITHUB/LOCAL DEPLOYMENT: Change the line below to:
-// const apiKey = import.meta.env.VITE_GEMINI_API_KEY || "";
-const apiKey = import.meta.env.VITE_GEMINI_API_KEY || "";
+// FOR GITHUB/LOCAL DEPLOYMENT:
+// Uncomment the line below and comment out 'const apiKey = "";'
+// const apiKey = import.meta.env.VITE_GEMINI_API_KEY || ""; 
+const apiKey = "";
 
 const callGemini = async (prompt) => {
   try {
@@ -29,16 +30,16 @@ const callGemini = async (prompt) => {
   }
 };
 
-// --- Brand Constants ---
+// --- Brand Constants (Aligned with tailwind.config.js) ---
 const BRAND = {
   navy: '#161242',
   green: '#1FAA4A',
   blue: '#006DB0',
-  lime: '#9FCC3B',
   teal: '#00A1BB',
   lavender: '#867EBB',
-  darkGray: '#585958',
+  lime: '#9FCC3B',
   lightGray: '#EEEEEE',
+  darkGray: '#585958',
   white: '#FFFFFF',
 };
 
@@ -53,16 +54,16 @@ const Card = ({ children, className = "" }) => (
 const Button = ({ onClick, children, variant = "primary", disabled = false, className = "" }) => {
   const baseStyle = "px-4 py-2 rounded-md font-bold transition-all duration-200 flex items-center justify-center gap-2";
   
-  // Custom styles using Panorama Brand Colors
+  // Custom styles using Panorama Brand Colors via inline styles to ensure mapping matches charts
   const variants = {
-    primary: `text-white hover:opacity-90 disabled:opacity-50`, // Dynamic bg set in style
-    secondary: `bg-[#EEEEEE] text-[#585958] hover:bg-gray-200 disabled:bg-gray-100`,
-    outline: `border-2 border-[#161242] text-[#161242] hover:bg-[#EEEEEE]`,
-    success: `text-white hover:opacity-90`, // Dynamic bg set in style
-    ai: `text-white shadow-sm hover:opacity-90` // Dynamic bg set in style
+    primary: `text-white hover:opacity-90 disabled:opacity-50`, 
+    secondary: `bg-pano-lightGray text-pano-darkGray hover:bg-gray-200 disabled:bg-gray-100`,
+    outline: `border-2 border-pano-navy text-pano-navy hover:bg-pano-lightGray`,
+    success: `text-white hover:opacity-90`, 
+    ai: `text-white shadow-sm hover:opacity-90` 
   };
 
-  // Inline styles for brand colors to ensure exact hex matching
+  // Inline styles for specific brand color application
   let style = {};
   if (variant === 'primary') style = { backgroundColor: BRAND.green };
   if (variant === 'success') style = { backgroundColor: BRAND.navy };
@@ -108,21 +109,20 @@ const NORMS_LIST = [
 ];
 
 // Mock Data representing a school (simulating the PDF charts)
-// Using Brand Colors for visualizations
 const ELA_DATA = {
   // When filtering for LOW Course Grades (Red/Yellow), what do assessments look like?
   lowGradesProfile: [
     { label: "Not Meeting (Assess)", value: 60, color: "bg-red-500" }, // Keep Red for 'Not Meeting' standard
-    { label: "Partially Meeting", value: 25, color: "bg-[#9FCC3B]" }, // Lime
-    { label: "Meeting (Assess)", value: 10, color: "bg-[#1FAA4A]" }, // Green (Hidden Gems)
-    { label: "Exceeding (Assess)", value: 5, color: "bg-[#00A1BB]" }  // Teal (Hidden Gems)
+    { label: "Partially Meeting", value: 25, color: "bg-pano-lime" }, // Lime
+    { label: "Meeting (Assess)", value: 10, color: "bg-pano-green" }, // Green (Hidden Gems)
+    { label: "Exceeding (Assess)", value: 5, color: "bg-pano-teal" }  // Teal (Hidden Gems)
   ],
   // When filtering for HIGH Course Grades (Green), what do assessments look like?
   highGradesProfile: [
     { label: "Not Meeting (Assess)", value: 15, color: "bg-red-500" }, // The Mirage
-    { label: "Partially Meeting", value: 20, color: "bg-[#9FCC3B]" }, // Lime
-    { label: "Meeting (Assess)", value: 40, color: "bg-[#1FAA4A]" }, // Green
-    { label: "Exceeding (Assess)", value: 25, color: "bg-[#00A1BB]" } // Teal
+    { label: "Partially Meeting", value: 20, color: "bg-pano-lime" }, // Lime
+    { label: "Meeting (Assess)", value: 40, color: "bg-pano-green" }, // Green
+    { label: "Exceeding (Assess)", value: 25, color: "bg-pano-teal" } // Teal
   ]
 };
 
@@ -130,8 +130,8 @@ const ATTENDANCE_DATA = {
   // Filtering for Chronically Absent
   chronicAbsentProfile: [
     { label: "Failing Courses", value: 65, color: "bg-red-500" }, 
-    { label: "Passing but struggling", value: 20, color: "bg-[#9FCC3B]" }, // Lime
-    { label: "Passing/Strong Grades", value: 15, color: "bg-[#1FAA4A]" } // Green (The Anomaly)
+    { label: "Passing but struggling", value: 20, color: "bg-pano-lime" }, // Lime
+    { label: "Passing/Strong Grades", value: 15, color: "bg-pano-green" } // Green (The Anomaly)
   ]
 };
 
@@ -140,17 +140,15 @@ const ATTENDANCE_DATA = {
 const Intro = ({ onStart }) => (
   <div className="flex flex-col items-center justify-center h-full max-w-2xl mx-auto text-center p-6 space-y-6 animate-fade-in">
     <div className="p-4 rounded-full bg-white shadow-md">
-      {/* Using Panorama Navy for the icon */}
-      <Search className="w-12 h-12" style={{ color: BRAND.navy }} />
+      <Search className="w-12 h-12 text-pano-navy" />
     </div>
-    <h1 className="text-4xl font-bold" style={{ color: BRAND.navy }}>Signal vs. Noise</h1>
-    <h2 className="text-xl" style={{ color: BRAND.darkGray }}>A Grading Practices Investigation</h2>
-    <p className="leading-relaxed text-lg" style={{ color: BRAND.darkGray }}>
+    <h1 className="text-4xl font-bold font-header text-pano-navy">Signal vs. Noise</h1>
+    <h2 className="text-xl font-header text-pano-darkGray">A Grading Practices Investigation</h2>
+    <p className="leading-relaxed text-lg font-body text-pano-darkGray">
       Major decisions hinge on grades: college admissions, financial aid, and life trajectories. 
       But research shows a growing mismatch between grades and standardized measures.
     </p>
-    {/* Using Lime for the highlight box background to stay on brand */}
-    <div className="p-4 border-l-4 text-left text-sm" style={{ backgroundColor: '#F9FBF6', borderColor: BRAND.lime, color: BRAND.navy }}>
+    <div className="p-4 border-l-4 text-left text-sm bg-[#F9FBF6] border-pano-lime text-pano-navy">
       <strong>Mission Objective:</strong> Identify system-level opportunities to strengthen Tier 1 grading practices so grades more accurately reflect student mastery.
     </div>
     <Button onClick={onStart} className="w-full md:w-auto text-lg px-8">
@@ -173,11 +171,11 @@ const Norms = ({ onNext }) => {
 
   return (
     <div className="max-w-2xl mx-auto p-6 space-y-6">
-      <h2 className="text-2xl font-bold flex items-center gap-2" style={{ color: BRAND.navy }}>
-        <ClipboardCheck style={{ color: BRAND.green }} /> 
+      <h2 className="text-2xl font-bold font-header flex items-center gap-2 text-pano-navy">
+        <ClipboardCheck className="text-pano-green" /> 
         Investigator's Code
       </h2>
-      <p style={{ color: BRAND.darkGray }}>Before viewing sensitive data, your team must align on shared norms.</p>
+      <p className="text-pano-darkGray font-body">Before viewing sensitive data, your team must align on shared norms.</p>
       
       <div className="space-y-3">
         {NORMS_LIST.map((norm, index) => (
@@ -191,11 +189,11 @@ const Norms = ({ onNext }) => {
             }}
           >
             {normsChecked.includes(index) ? (
-              <CheckSquare className="w-6 h-6 flex-shrink-0" style={{ color: BRAND.green }} />
+              <CheckSquare className="w-6 h-6 flex-shrink-0 text-pano-green" />
             ) : (
               <Square className="w-6 h-6 text-gray-300 flex-shrink-0" />
             )}
-            <span className={`font-medium`} style={{ color: normsChecked.includes(index) ? BRAND.navy : BRAND.darkGray }}>
+            <span className={`font-medium font-body`} style={{ color: normsChecked.includes(index) ? BRAND.navy : BRAND.darkGray }}>
               {norm}
             </span>
           </div>
@@ -215,7 +213,7 @@ const Norms = ({ onNext }) => {
 };
 
 const DashboardELA = ({ onNext, setScore }) => {
-  const [activeFilter, setActiveFilter] = useState(null); // 'low', 'high', or null
+  const [activeFilter, setActiveFilter] = useState(null); 
   const [insightFound, setInsightFound] = useState(false);
   const [feedback, setFeedback] = useState(null); 
   const [aiAnalysis, setAiAnalysis] = useState(null);
@@ -257,21 +255,21 @@ const DashboardELA = ({ onNext, setScore }) => {
   return (
     <div className="max-w-4xl mx-auto p-4 space-y-6">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold" style={{ color: BRAND.navy }}>Case File 1: Local ELA Data</h2>
-        <span className="px-3 py-1 rounded-full text-sm font-bold text-white" style={{ backgroundColor: BRAND.blue }}>Course Grades vs. Assessment</span>
+        <h2 className="text-2xl font-bold font-header text-pano-navy">Case File 1: Local ELA Data</h2>
+        <span className="px-3 py-1 rounded-full text-sm font-bold text-white bg-pano-blue">Course Grades vs. Assessment</span>
       </div>
 
-      <p className="mb-4" style={{ color: BRAND.darkGray }}>
+      <p className="mb-4 font-body text-pano-darkGray">
         Use the filters below to investigate the relationship between <strong>Coursework Grades</strong> (Teacher assigned) and <strong>Standardized Assessments</strong> (State tests).
       </p>
 
       <div className="grid md:grid-cols-2 gap-8">
         {/* Controls */}
         <Card className="p-6 space-y-4">
-          <h3 className="font-bold text-lg flex items-center gap-2" style={{ color: BRAND.navy }}>
-            <Users className="w-5 h-5" style={{ color: BRAND.darkGray }} /> Student Filters
+          <h3 className="font-bold text-lg flex items-center gap-2 font-header text-pano-navy">
+            <Users className="w-5 h-5 text-pano-darkGray" /> Student Filters
           </h3>
-          <p className="text-sm" style={{ color: BRAND.darkGray }}>Isolate a student group to see their assessment data.</p>
+          <p className="text-sm font-body text-pano-darkGray">Isolate a student group to see their assessment data.</p>
           
           <div className="space-y-3">
             <button 
@@ -279,8 +277,8 @@ const DashboardELA = ({ onNext, setScore }) => {
               className={`w-full p-4 rounded-lg border-2 text-left transition-all ${activeFilter === 'low' ? 'bg-red-50 ring-2 ring-red-200' : 'hover:bg-gray-50'}`}
               style={{ borderColor: activeFilter === 'low' ? 'red' : '#E5E7EB' }}
             >
-              <div className="font-bold text-red-700">Filter: Non-Passing Grades</div>
-              <div className="text-xs text-red-600">Students with D/F in Coursework</div>
+              <div className="font-bold text-red-700 font-header">Filter: Non-Passing Grades</div>
+              <div className="text-xs text-red-600 font-body">Students with D/F in Coursework</div>
             </button>
 
             <button 
@@ -288,8 +286,8 @@ const DashboardELA = ({ onNext, setScore }) => {
               className={`w-full p-4 rounded-lg border-2 text-left transition-all ${activeFilter === 'high' ? 'bg-green-50 ring-2 ring-green-200' : 'hover:bg-gray-50'}`}
               style={{ borderColor: activeFilter === 'high' ? BRAND.green : '#E5E7EB' }}
             >
-              <div className="font-bold" style={{ color: BRAND.green }}>Filter: Passing/Strong Grades</div>
-              <div className="text-xs" style={{ color: BRAND.green }}>Students with A/B/C in Coursework</div>
+              <div className="font-bold text-pano-green font-header">Filter: Passing/Strong Grades</div>
+              <div className="text-xs text-pano-green font-body">Students with A/B/C in Coursework</div>
             </button>
           </div>
         </Card>
@@ -303,7 +301,7 @@ const DashboardELA = ({ onNext, setScore }) => {
             </div>
           ) : (
             <div className="space-y-4 animate-fade-in">
-              <h3 className="font-bold text-center mb-4" style={{ color: BRAND.navy }}>
+              <h3 className="font-bold text-center mb-4 font-header text-pano-navy">
                 Assessment Results for <span className={activeFilter === 'low' ? 'text-red-600' : ''} style={{ color: activeFilter === 'high' ? BRAND.green : undefined }}>
                   {activeFilter === 'low' ? "Struggling" : "High Performing"}
                 </span> Students
@@ -311,7 +309,7 @@ const DashboardELA = ({ onNext, setScore }) => {
               
               {(activeFilter === 'low' ? ELA_DATA.lowGradesProfile : ELA_DATA.highGradesProfile).map((item, idx) => (
                 <div key={idx} className="space-y-1">
-                  <div className="flex justify-between text-xs font-medium" style={{ color: BRAND.darkGray }}>
+                  <div className="flex justify-between text-xs font-medium font-body text-pano-darkGray">
                     <span>{item.label}</span>
                     <span>{item.value}%</span>
                   </div>
@@ -330,10 +328,10 @@ const DashboardELA = ({ onNext, setScore }) => {
 
       {/* Insight Prompt */}
       {activeFilter && (
-        <div className="mt-6 p-6 bg-white border rounded-xl animate-slide-up shadow-sm" style={{ borderColor: BRAND.lightGray }}>
+        <div className="mt-6 p-6 bg-white border border-pano-lightGray rounded-xl animate-slide-up shadow-sm">
           <div className="flex justify-between items-start mb-4">
-            <h3 className="text-lg font-bold flex items-center gap-2" style={{ color: BRAND.navy }}>
-              <Search className="w-5 h-5" style={{ color: BRAND.blue }} />
+            <h3 className="text-lg font-bold flex items-center gap-2 font-header text-pano-navy">
+              <Search className="w-5 h-5 text-pano-blue" />
               Detective's Log: What do you see?
             </h3>
             <Button variant="ai" onClick={handleConsultAI} disabled={loadingAi} className="text-xs px-3 py-1">
@@ -343,11 +341,11 @@ const DashboardELA = ({ onNext, setScore }) => {
 
           {/* AI Analysis Box */}
           {aiAnalysis && (
-            <div className="mb-4 p-4 rounded-lg animate-fade-in text-sm" style={{ backgroundColor: '#F0F9FF', borderColor: BRAND.blue, borderWidth: '1px', color: BRAND.navy }}>
-              <h4 className="font-bold flex items-center gap-2 mb-2" style={{ color: BRAND.blue }}>
+            <div className="mb-4 p-4 rounded-lg animate-fade-in text-sm bg-[#F0F9FF] border border-pano-blue text-pano-navy">
+              <h4 className="font-bold flex items-center gap-2 mb-2 font-header text-pano-blue">
                 <Sparkles className="w-4 h-4" /> Chief's Hypothesis:
               </h4>
-              <div className="prose prose-sm max-w-none whitespace-pre-line">
+              <div className="prose prose-sm max-w-none whitespace-pre-line font-body">
                 {aiAnalysis}
               </div>
             </div>
@@ -359,8 +357,8 @@ const DashboardELA = ({ onNext, setScore }) => {
                <div className="flex items-start gap-3">
                  {feedback.isError ? <Flag className="w-5 h-5 flex-shrink-0" /> : <CheckSquare className="w-5 h-5 flex-shrink-0" />}
                  <div>
-                   <span className="font-bold block mb-1">{feedback.isError ? "Investigator Flag:" : "Correct Analysis:"}</span>
-                   {feedback.message}
+                   <span className="font-bold block mb-1 font-header">{feedback.isError ? "Investigator Flag:" : "Correct Analysis:"}</span>
+                   <span className="font-body">{feedback.message}</span>
                  </div>
                </div>
              </div>
@@ -368,38 +366,36 @@ const DashboardELA = ({ onNext, setScore }) => {
           
           {activeFilter === 'low' ? (
             <div className="space-y-2">
-              <p className="mb-4 text-sm" style={{ color: BRAND.darkGray }}>Look at the Green bars in the assessment data above.</p>
+              <p className="mb-4 text-sm font-body text-pano-darkGray">Look at the Green bars in the assessment data above.</p>
               
               <button 
                 onClick={() => handleSelection(false, "", "Incorrect. Look closely at the data bars. If grades and test scores were perfectly aligned, students with low grades would ONLY have red/yellow test scores. But we see green bars here.")}
-                className={`w-full text-left p-3 border rounded-md text-sm transition-colors ${feedback?.isError ? 'bg-orange-50 border-orange-200' : 'bg-white hover:bg-gray-50'}`}
+                className={`w-full text-left p-3 border rounded-md text-sm transition-colors font-body ${feedback?.isError ? 'bg-orange-50 border-orange-200' : 'bg-white hover:bg-gray-50'}`}
               >
                 A. Grades and test scores are perfectly aligned.
               </button>
 
               <button 
                 onClick={() => handleSelection(true, "Correct. These are our 'Hidden Gems'. They have mastered the content according to the state (Green bar), but are failing the class. We need to investigate why.", "")}
-                className="w-full text-left p-3 bg-white border hover:bg-gray-50 rounded-md text-sm transition-colors font-bold"
-                style={{ color: BRAND.navy }}
+                className="w-full text-left p-3 bg-white border hover:bg-gray-50 rounded-md text-sm transition-colors font-bold font-body text-pano-navy"
               >
                 B. "Hidden Gems": Some students are failing the class but are proficient on the state test.
               </button>
             </div>
           ) : (
             <div className="space-y-2">
-              <p className="mb-4 text-sm" style={{ color: BRAND.darkGray }}>Look at the Red/Yellow bars in the assessment data above.</p>
+              <p className="mb-4 text-sm font-body text-pano-darkGray">Look at the Red/Yellow bars in the assessment data above.</p>
               
               <button 
                 onClick={() => handleSelection(true, "Correct. This is 'The Mirage'. These students look like they are doing well in the grade book, but the assessment reveals gaps in mastery. Are grades reflecting participation instead of learning?", "")}
-                className="w-full text-left p-3 bg-white border hover:bg-gray-50 rounded-md text-sm transition-colors font-bold"
-                style={{ color: BRAND.navy }}
+                className="w-full text-left p-3 bg-white border hover:bg-gray-50 rounded-md text-sm transition-colors font-bold font-body text-pano-navy"
               >
                 A. "The Mirage": Some students have high grades but are not meeting expectations on the test.
               </button>
 
               <button 
                 onClick={() => handleSelection(false, "", "Incorrect. Look closely at the Red bars in the chart. If high grades guaranteed high scores, we would see 0% in the 'Not Meeting' category. But we see 15%.")}
-                className={`w-full text-left p-3 border rounded-md text-sm transition-colors ${feedback?.isError ? 'bg-orange-50 border-orange-200' : 'bg-white hover:bg-gray-50'}`}
+                className={`w-full text-left p-3 border rounded-md text-sm transition-colors font-body ${feedback?.isError ? 'bg-orange-50 border-orange-200' : 'bg-white hover:bg-gray-50'}`}
               >
                 B. High grades always guarantee high test scores.
               </button>
@@ -436,18 +432,18 @@ const DashboardACT = ({ onNext }) => {
   return (
     <div className="max-w-4xl mx-auto p-4 space-y-6">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold" style={{ color: BRAND.navy }}>Case File 2: The National Trend</h2>
-        <span className="px-3 py-1 rounded-full text-sm font-bold text-white" style={{ backgroundColor: BRAND.teal }}>National ACT vs. GPA</span>
+        <h2 className="text-2xl font-bold font-header text-pano-navy">Case File 2: The National Trend</h2>
+        <span className="px-3 py-1 rounded-full text-sm font-bold text-white bg-pano-teal">National ACT vs. GPA</span>
       </div>
 
       <div className="grid md:grid-cols-2 gap-8 items-center">
         <Card className="p-6">
-          <h3 className="font-bold mb-4" style={{ color: BRAND.navy }}>Data Trend: 2018 - 2021</h3>
+          <h3 className="font-bold mb-4 font-header text-pano-navy">Data Trend: 2018 - 2021</h3>
           <div className="space-y-6">
             <div className="p-4 bg-red-50 rounded-lg border border-red-100">
               <div className="flex justify-between items-center mb-2">
-                <span className="font-bold text-red-800 flex gap-2"><TrendingDown className="w-5 h-5"/> Avg. ACT Score</span>
-                <span className="text-sm text-red-600">Max 36</span>
+                <span className="font-bold text-red-800 flex gap-2 font-header"><TrendingDown className="w-5 h-5"/> Avg. ACT Score</span>
+                <span className="text-sm text-red-600 font-body">Max 36</span>
               </div>
               <div className="flex justify-between text-lg font-mono font-bold text-red-900">
                 <span>22.51 (2018)</span>
@@ -458,8 +454,8 @@ const DashboardACT = ({ onNext }) => {
 
             <div className="p-4 bg-green-50 rounded-lg border border-green-100">
               <div className="flex justify-between items-center mb-2">
-                <span className="font-bold text-green-800 flex gap-2"><TrendingUp className="w-5 h-5"/> Avg. HS GPA</span>
-                <span className="text-sm text-green-600">Max 4.0</span>
+                <span className="font-bold text-green-800 flex gap-2 font-header"><TrendingUp className="w-5 h-5"/> Avg. HS GPA</span>
+                <span className="text-sm text-green-600 font-body">Max 4.0</span>
               </div>
               <div className="flex justify-between text-lg font-mono font-bold text-green-900">
                 <span>3.48 (2018)</span>
@@ -471,19 +467,19 @@ const DashboardACT = ({ onNext }) => {
         </Card>
 
         <div className="space-y-4">
-          <p style={{ color: BRAND.darkGray }}>
+          <p className="font-body text-pano-darkGray">
             While standardized test scores (ACT/SAT) have declined, High School GPAs have risen during the same period.
           </p>
 
-          <h4 className="font-bold" style={{ color: BRAND.navy }}>What does this divergence most likely indicate?</h4>
+          <h4 className="font-bold font-header text-pano-navy">What does this divergence most likely indicate?</h4>
 
            {feedback && (
              <div className={`mb-4 p-4 rounded-md border-l-4 ${feedback.isError ? 'bg-orange-50 border-orange-500 text-orange-800' : 'bg-green-50 border-green-500 text-green-800'} animate-fade-in`}>
                <div className="flex items-start gap-3">
                  {feedback.isError ? <Flag className="w-5 h-5 flex-shrink-0" /> : <CheckSquare className="w-5 h-5 flex-shrink-0" />}
                  <div>
-                   <span className="font-bold block mb-1">{feedback.isError ? "Investigator Flag:" : "Correct Analysis:"}</span>
-                   {feedback.message}
+                   <span className="font-bold block mb-1 font-header">{feedback.isError ? "Investigator Flag:" : "Correct Analysis:"}</span>
+                   <span className="font-body">{feedback.message}</span>
                  </div>
                </div>
              </div>
@@ -493,15 +489,15 @@ const DashboardACT = ({ onNext }) => {
             onClick={() => handleSelection(false, "", "Incorrect. While standardized tests have flaws, a declining score suggests mastery is NOT increasing, yet grades (GPA) are going up. This contradiction is the key.")}
             className={`w-full text-left p-4 border rounded-lg hover:shadow-md transition-all group ${feedback?.isError ? 'bg-orange-50' : 'bg-white'}`}
           >
-            <span className="font-bold block mb-1 group-hover:text-blue-600" style={{ color: BRAND.navy }}>Students are mastering more content, but testing worse.</span>
+            <span className="font-bold block mb-1 group-hover:text-pano-blue font-header text-pano-navy">Students are mastering more content, but testing worse.</span>
           </button>
 
           <button 
             onClick={() => handleSelection(true, "Correct. This phenomenon, known as 'Grade Inflation,' suggests that grades are rising due to non-academic factors (behavior, participation, extra credit) rather than increased content mastery.", "")}
             className="w-full text-left p-4 bg-white border rounded-lg hover:shadow-md transition-all group"
           >
-            <span className="font-bold block mb-1 group-hover:text-blue-600" style={{ color: BRAND.navy }}>Grade Inflation is occurring.</span>
-            <span className="text-sm" style={{ color: BRAND.darkGray }}>Grades are increasing due to non-academic factors, masking gaps in mastery.</span>
+            <span className="font-bold block mb-1 group-hover:text-pano-blue font-header text-pano-navy">Grade Inflation is occurring.</span>
+            <span className="text-sm font-body text-pano-darkGray">Grades are increasing due to non-academic factors, masking gaps in mastery.</span>
           </button>
 
            {insightFound && (
@@ -534,17 +530,17 @@ const DashboardAttendance = ({ onNext }) => {
     return (
         <div className="max-w-4xl mx-auto p-4 space-y-6">
             <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold" style={{ color: BRAND.navy }}>Case File 3: Attendance Cross-Reference</h2>
-            <span className="px-3 py-1 rounded-full text-sm font-bold text-white" style={{ backgroundColor: BRAND.lavender }}>Attendance vs. Grades</span>
+            <h2 className="text-2xl font-bold font-header text-pano-navy">Case File 3: Attendance Cross-Reference</h2>
+            <span className="px-3 py-1 rounded-full text-sm font-bold text-white bg-pano-lavender">Attendance vs. Grades</span>
             </div>
 
             <div className="grid md:grid-cols-2 gap-8 items-start">
                 <Card className="p-6">
-                    <h3 className="font-bold mb-4" style={{ color: BRAND.darkGray }}>Cohort: Chronically Absent Students</h3>
+                    <h3 className="font-bold mb-4 font-header text-pano-darkGray">Cohort: Chronically Absent Students</h3>
                     <div className="space-y-4">
                         {ATTENDANCE_DATA.chronicAbsentProfile.map((item, idx) => (
                             <div key={idx} className="space-y-1">
-                                <div className="flex justify-between text-sm font-medium" style={{ color: BRAND.darkGray }}>
+                                <div className="flex justify-between text-sm font-medium font-body text-pano-darkGray">
                                     <span>{item.label}</span>
                                     <span>{item.value}%</span>
                                 </div>
@@ -562,24 +558,24 @@ const DashboardAttendance = ({ onNext }) => {
                 </Card>
 
                 <div className="space-y-4">
-                    <div className="p-4 rounded-lg border-l-4" style={{ backgroundColor: '#F0F9FF', borderColor: BRAND.blue }}>
-                        <h4 className="font-bold flex items-center gap-2" style={{ color: BRAND.navy }}>
+                    <div className="p-4 rounded-lg border-l-4 bg-[#F0F9FF] border-pano-blue">
+                        <h4 className="font-bold flex items-center gap-2 font-header text-pano-navy">
                             <AlertCircle className="w-5 h-5"/> Observation Required
                         </h4>
-                        <p className="text-sm mt-2" style={{ color: BRAND.darkGray }}>
+                        <p className="text-sm mt-2 font-body text-pano-darkGray">
                             You are looking at students who missed 10%+ of school days.
                         </p>
                     </div>
                     
-                    <h4 className="font-bold" style={{ color: BRAND.navy }}>What is the most critical question for a "Signal vs. Noise" detective?</h4>
+                    <h4 className="font-bold font-header text-pano-navy">What is the most critical question for a "Signal vs. Noise" detective?</h4>
                     
                     {feedback && (
                         <div className={`p-4 rounded-md border-l-4 ${feedback.isError ? 'bg-orange-50 border-orange-500 text-orange-800' : 'bg-green-50 border-green-500 text-green-800'} animate-fade-in`}>
                             <div className="flex items-start gap-3">
                                 {feedback.isError ? <Flag className="w-5 h-5 flex-shrink-0" /> : <CheckSquare className="w-5 h-5 flex-shrink-0" />}
                                 <div>
-                                <span className="font-bold block mb-1">{feedback.isError ? "Investigator Flag:" : "Excellent Deduction:"}</span>
-                                {feedback.message}
+                                <span className="font-bold block mb-1 font-header">{feedback.isError ? "Investigator Flag:" : "Excellent Deduction:"}</span>
+                                <span className="font-body">{feedback.message}</span>
                                 </div>
                             </div>
                         </div>
@@ -589,16 +585,16 @@ const DashboardAttendance = ({ onNext }) => {
                         onClick={() => handleAnswer(true, "Correct. This is the anomaly! If they aren't in class but have an A, are we grading mastery (which is good) or was the work just easy to send home (low rigor)?", "")}
                         className="w-full text-left p-4 bg-white border rounded-lg hover:shadow-md transition-all group"
                     >
-                        <span className="font-bold block mb-1 group-hover:text-blue-600" style={{ color: BRAND.navy }}>Why are 15% of absent students still getting As?</span>
-                        <span className="text-sm" style={{ color: BRAND.darkGray }}>Is the grade reflecting mastery, or was the work just easy to make up?</span>
+                        <span className="font-bold block mb-1 group-hover:text-pano-blue font-header text-pano-navy">Why are 15% of absent students still getting As?</span>
+                        <span className="text-sm font-body text-pano-darkGray">Is the grade reflecting mastery, or was the work just easy to make up?</span>
                     </button>
                     
                     <button 
                         onClick={() => handleAnswer(false, "", "While this is a valid concern, it is an expected pattern. Students who miss school often fail. As a detective looking for 'System Noise', this correlation doesn't reveal a grading inconsistency. Look for the anomaly.")}
                         className="w-full text-left p-4 bg-white border rounded-lg hover:shadow-md transition-all group"
                     >
-                        <span className="font-bold block mb-1 group-hover:text-blue-600" style={{ color: BRAND.navy }}>Why do absent students fail?</span>
-                        <span className="text-sm" style={{ color: BRAND.darkGray }}>This seems like a straightforward correlation with missed instruction.</span>
+                        <span className="font-bold block mb-1 group-hover:text-pano-blue font-header text-pano-navy">Why do absent students fail?</span>
+                        <span className="text-sm font-body text-pano-darkGray">This seems like a straightforward correlation with missed instruction.</span>
                     </button>
 
                      {insightFound && (
@@ -631,25 +627,25 @@ const DashboardSources = ({ onNext }) => {
   return (
     <div className="max-w-4xl mx-auto p-4 space-y-6">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold" style={{ color: BRAND.navy }}>Case File 4: The Root Cause</h2>
-        <span className="px-3 py-1 rounded-full text-sm font-bold text-white" style={{ backgroundColor: BRAND.lime }}>Theory of Discrepancy</span>
+        <h2 className="text-2xl font-bold font-header text-pano-navy">Case File 4: The Root Cause</h2>
+        <span className="px-3 py-1 rounded-full text-sm font-bold text-white bg-pano-lime">Theory of Discrepancy</span>
       </div>
 
-      <p className="leading-relaxed" style={{ color: BRAND.darkGray }}>
+      <p className="leading-relaxed font-body text-pano-darkGray">
         Research from Norway (Arencibia Alemán et al., 2024) shows that even in systems where exams and grades are legally required to align, discrepancies persist. 
         In the U.S., where alignment is looser, the problem is worse.
       </p>
 
       <Card className="p-6">
-        <h3 className="font-bold mb-4" style={{ color: BRAND.navy }}>According to Willingham's Framework, what is the largest source of discrepancy?</h3>
+        <h3 className="font-bold mb-4 font-header text-pano-navy">According to Willingham's Framework, what is the largest source of discrepancy?</h3>
         
         {feedback && (
             <div className={`mb-4 p-4 rounded-md border-l-4 ${feedback.isError ? 'bg-orange-50 border-orange-500 text-orange-800' : 'bg-green-50 border-green-500 text-green-800'} animate-fade-in`}>
               <div className="flex items-start gap-3">
                 {feedback.isError ? <Flag className="w-5 h-5 flex-shrink-0" /> : <CheckSquare className="w-5 h-5 flex-shrink-0" />}
                 <div>
-                  <span className="font-bold block mb-1">{feedback.isError ? "Investigator Flag:" : "Correct Analysis:"}</span>
-                  {feedback.message}
+                  <span className="font-bold block mb-1 font-header">{feedback.isError ? "Investigator Flag:" : "Correct Analysis:"}</span>
+                  <span className="font-body">{feedback.message}</span>
                 </div>
               </div>
             </div>
@@ -660,24 +656,24 @@ const DashboardSources = ({ onNext }) => {
             onClick={() => handleSelection(false, "", "Incorrect. While Systematic Errors (like teacher bias) do contribute, research identifies a more fundamental structural issue as the primary driver.")}
             className="w-full text-left p-4 border rounded-lg hover:shadow-sm transition-all bg-white"
           >
-            <span className="font-bold block" style={{ color: BRAND.navy }}>Measurement Error</span>
-            <span className="text-sm" style={{ color: BRAND.darkGray }}>Simple teacher mistakes or bias.</span>
+            <span className="font-bold block font-header text-pano-navy">Measurement Error</span>
+            <span className="text-sm font-body text-pano-darkGray">Simple teacher mistakes or bias.</span>
           </button>
 
           <button 
             onClick={() => handleSelection(true, "Correct. 'Content Differences' means the grade measures things the exam does not. In many classrooms, grades include behavior, participation, and effort ('Non-academic factors'), while the exam only measures content mastery. This is the root of the noise.", "")}
             className="w-full text-left p-4 border rounded-lg hover:shadow-sm transition-all bg-white"
           >
-            <span className="font-bold block" style={{ color: BRAND.navy }}>Content Differences</span>
-            <span className="text-sm" style={{ color: BRAND.darkGray }}>Grades measuring non-academic factors (behavior, participation) vs. exams measuring only content.</span>
+            <span className="font-bold block font-header text-pano-navy">Content Differences</span>
+            <span className="text-sm font-body text-pano-darkGray">Grades measuring non-academic factors (behavior, participation) vs. exams measuring only content.</span>
           </button>
           
           <button 
             onClick={() => handleSelection(false, "", "Incorrect. Situational differences (like a bad test day) account for some variance, but they don't explain the systematic inflation of grades we see in the data.")}
             className="w-full text-left p-4 border rounded-lg hover:shadow-sm transition-all bg-white"
           >
-            <span className="font-bold block" style={{ color: BRAND.navy }}>Situational Differences</span>
-            <span className="text-sm" style={{ color: BRAND.darkGray }}>The student just had a bad day on the test.</span>
+            <span className="font-bold block font-header text-pano-navy">Situational Differences</span>
+            <span className="text-sm font-body text-pano-darkGray">The student just had a bad day on the test.</span>
           </button>
         </div>
       </Card>
@@ -711,33 +707,33 @@ const Reflection = ({ onNext }) => {
 
   return (
     <div className="max-w-3xl mx-auto p-4 space-y-6 animate-fade-in">
-      <h2 className="text-3xl font-bold text-center" style={{ color: BRAND.navy }}>Case Synthesis</h2>
-      <p className="text-center" style={{ color: BRAND.darkGray }}>
+      <h2 className="text-3xl font-bold text-center font-header text-pano-navy">Case Synthesis</h2>
+      <p className="text-center font-body text-pano-darkGray">
         You've identified "Hidden Gems", "Mirages", and the impact of Grade Inflation. 
         Research suggests targeted training is the solution.
       </p>
 
       <Card className="p-6 bg-white border-gray-300">
-        <h3 className="font-bold text-lg mb-4" style={{ color: BRAND.navy }}>Complete the System Diagnosis:</h3>
-        <p className="text-xl font-serif italic mb-6" style={{ color: BRAND.darkGray }}>
+        <h3 className="font-bold text-lg mb-4 font-header text-pano-navy">Complete the System Diagnosis:</h3>
+        <p className="text-xl font-serif italic mb-6 text-pano-darkGray">
           "The discrepancy between our grades and mastery signals is primarily caused by..."
         </p>
 
         <div className="grid gap-3">
-           <button className="p-3 bg-white border rounded text-left hover:bg-gray-50 focus:ring-2 focus:ring-blue-500" style={{ color: BRAND.darkGray }}>
+           <button className="p-3 bg-white border rounded text-left hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 font-body text-pano-darkGray">
              ...a lack of teacher training on accurate grading practices.
            </button>
-           <button className="p-3 bg-white border rounded text-left hover:bg-gray-50 focus:ring-2 focus:ring-blue-500" style={{ color: BRAND.darkGray }}>
+           <button className="p-3 bg-white border rounded text-left hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 font-body text-pano-darkGray">
              ...mixing non-academic factors (behavior) into academic reports.
            </button>
-           <button className="p-3 bg-white border rounded text-left hover:bg-gray-50 focus:ring-2 focus:ring-blue-500" style={{ color: BRAND.darkGray }}>
+           <button className="p-3 bg-white border rounded text-left hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 font-body text-pano-darkGray">
              ...grade inflation masking gaps in fundamental understanding.
            </button>
         </div>
       </Card>
 
       <div className="pt-6">
-        <h3 className="font-bold mb-4" style={{ color: BRAND.navy }}>Select One Action Step (Tier 1 Practice):</h3>
+        <h3 className="font-bold mb-4 font-header text-pano-navy">Select One Action Step (Tier 1 Practice):</h3>
         <div className="grid sm:grid-cols-2 gap-4">
           {[
             "Implement Teacher Training on Grading",
@@ -772,11 +768,11 @@ const Reflection = ({ onNext }) => {
              </Button>
 
             {aiAdvice && (
-                <div className="p-6 rounded-lg animate-fade-in shadow-inner" style={{ backgroundColor: '#F0F9FF', borderColor: BRAND.lavender, borderWidth: '1px' }}>
-                    <h4 className="font-bold flex items-center gap-2 mb-4 text-lg" style={{ color: BRAND.navy }}>
+                <div className="p-6 rounded-lg animate-fade-in shadow-inner bg-[#F0F9FF] border border-pano-lavender">
+                    <h4 className="font-bold flex items-center gap-2 mb-4 text-lg font-header text-pano-navy">
                         <MessageSquare className="w-5 h-5" /> Suggested Intervention Strategies:
                     </h4>
-                    <div className="prose max-w-none whitespace-pre-line" style={{ color: BRAND.darkGray }}>
+                    <div className="prose max-w-none whitespace-pre-line font-body text-pano-darkGray">
                         {aiAdvice}
                     </div>
                 </div>
@@ -800,16 +796,16 @@ const Reflection = ({ onNext }) => {
 
 const Conclusion = ({ onRestart }) => (
   <div className="flex flex-col items-center justify-center h-full max-w-2xl mx-auto text-center p-6 space-y-6 animate-fade-in">
-    <div className="p-6 rounded-full" style={{ backgroundColor: '#F0FDF4' }}>
-      <CheckSquare className="w-16 h-16" style={{ color: BRAND.green }} />
+    <div className="p-6 rounded-full bg-[#F0FDF4]">
+      <CheckSquare className="w-16 h-16 text-pano-green" />
     </div>
-    <h1 className="text-4xl font-bold" style={{ color: BRAND.navy }}>Investigation Complete</h1>
-    <p className="text-lg" style={{ color: BRAND.darkGray }}>
+    <h1 className="text-4xl font-bold font-header text-pano-navy">Investigation Complete</h1>
+    <p className="text-lg font-body text-pano-darkGray">
       You have successfully identified misalignment in the grading system and proposed a Tier 1 intervention.
     </p>
     <Card className="bg-white p-6 w-full text-left">
-      <h3 className="font-bold mb-2" style={{ color: BRAND.navy }}>Key Takeaways from the Data:</h3>
-      <ul className="list-disc list-inside space-y-2" style={{ color: BRAND.darkGray }}>
+      <h3 className="font-bold mb-2 font-header text-pano-navy">Key Takeaways from the Data:</h3>
+      <ul className="list-disc list-inside space-y-2 font-body text-pano-darkGray">
         <li><strong>The Discrepancy:</strong> Grades are increasingly diverging from standardized measures (Grade Inflation).</li>
         <li><strong>The Source:</strong> Content Differences—specifically, the inclusion of non-academic factors like behavior in grades.</li>
         <li><strong>The Solution:</strong> Teacher training and clearer policies that separate behavior from mastery.</li>
@@ -827,25 +823,18 @@ const App = () => {
   const [stage, setStage] = useState(GAME_STAGES.INTRO);
   const [score, setScore] = useState(0);
 
-  // Global Styles for Fonts and Branding
-  useEffect(() => {
-    // Inject custom CSS variables or global styles if needed, though most is handled inline or via Tailwind
-    document.body.style.backgroundColor = BRAND.lightGray;
-    document.body.style.fontFamily = "'Proxima Nova', Arial, sans-serif";
-  }, []);
-
   // --- Main Render Router ---
 
   return (
-    <div className="min-h-screen text-gray-900 font-sans selection:bg-blue-200" style={{ backgroundColor: BRAND.lightGray }}>
+    <div className="min-h-screen text-gray-900 font-sans selection:bg-blue-200 bg-pano-lightGray">
       {/* Header */}
-      <header className="px-6 py-4 flex justify-between items-center sticky top-0 z-10 shadow-sm" style={{ backgroundColor: BRAND.navy, color: BRAND.white }}>
+      <header className="px-6 py-4 flex justify-between items-center sticky top-0 z-10 shadow-sm bg-pano-navy text-white">
         <div className="flex items-center gap-2 font-bold text-xl">
           {/* Logo representation using brand shapes/icons */}
           <div className="flex gap-1">
-             <div className="w-3 h-3 bg-[#1FAA4A] rounded-sm"></div>
-             <div className="w-3 h-3 bg-[#006DB0] rounded-sm"></div>
-             <div className="w-3 h-3 bg-[#9FCC3B] rounded-sm"></div>
+             <div className="w-3 h-3 bg-pano-green rounded-sm"></div>
+             <div className="w-3 h-3 bg-pano-blue rounded-sm"></div>
+             <div className="w-3 h-3 bg-pano-lime rounded-sm"></div>
           </div>
           <span className="hidden sm:inline">Panorama Sim:</span> Grading Detective
         </div>
@@ -883,7 +872,7 @@ const App = () => {
       </main>
 
       {/* Footer */}
-      <footer className="text-center py-6 text-sm" style={{ color: BRAND.darkGray }}>
+      <footer className="text-center py-6 text-sm text-pano-darkGray">
         Based on "What Do Our Grades Communicate?" - A Student Success Data Review
       </footer>
 
