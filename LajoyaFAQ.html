@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>La Joya ISD Counselor Interventions FAQ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Panorama Brand Colors */
+        :root {
+            --panorama-navy: #161242;
+            --panorama-green: #1FAA4A;
+            --panorama-blue: #006DB0;
+            --panorama-lime: #9FCC3B;
+            --panorama-dark-gray: #585958;
+            --panorama-light-gray: #EEEEEE;
+        }
+
+        body {
+            background-color: var(--panorama-light-gray);
+            font-family: 'Segoe UI', Arial, sans-serif; /* Web-safe fallback for Proxima Nova */
+            color: var(--panorama-dark-gray);
+        }
+
+        .header-bg {
+            background-color: var(--panorama-navy);
+        }
+
+        .faq-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            transition: all 0.2s ease;
+            margin-bottom: 1rem;
+        }
+
+        .faq-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        details summary {
+            list-style: none;
+            cursor: pointer;
+            padding: 1.25rem;
+            color: var(--panorama-navy);
+            font-weight: 700;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        details summary::-webkit-details-marker {
+            display: none;
+        }
+
+        details summary::after {
+            content: '+';
+            font-size: 1.5rem;
+            color: var(--panorama-blue);
+            transition: transform 0.2s;
+        }
+
+        details[open] summary::after {
+            content: '−';
+            transform: rotate(180deg);
+        }
+
+        details[open] summary {
+            border-bottom: 1px solid var(--panorama-light-gray);
+        }
+
+        .answer-content {
+            padding: 1.25rem;
+            line-height: 1.6;
+        }
+
+        .badge-green {
+            background-color: #e6f6ec;
+            color: #1a7f37;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .link-style {
+            color: var(--panorama-blue);
+            text-decoration: underline;
+            font-weight: 600;
+        }
+
+        .link-style:hover {
+            color: var(--panorama-navy);
+        }
+
+        .should-box { border-left: 4px solid var(--panorama-green); background: #f0fdf4; }
+        .should-not-box { border-left: 4px solid #ef4444; background: #fef2f2; }
+
+    </style>
+</head>
+<body class="pb-20">
+
+    <!-- Header Section -->
+    <header class="header-bg text-white py-12 px-6 shadow-lg mb-10">
+        <div class="max-w-4xl mx-auto text-center md:text-left">
+            <h1 class="text-3xl md:text-4xl font-bold mb-4">Counselor Interventions FAQ</h1>
+            <p class="text-blue-100 text-lg opacity-90 italic">La Joya ISD — Living One-Pager</p>
+            <div class="mt-6 flex flex-wrap justify-center md:justify-start gap-3">
+                <span class="bg-green-600 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">Attendance Guidance</span>
+                <span class="bg-blue-600 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">Panorama Platform</span>
+                <span class="bg-white/10 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">Updated Weekly</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-6">
+        
+        <!-- Purpose -->
+        <div class="mb-10 text-center">
+            <p class="text-lg text-gray-600 italic">
+                This FAQ provides clear, non‑negotiable guidance for implementing attendance and engagement interventions using Panorama.
+            </p>
+        </div>
+
+        <div class="space-y-2">
+
+            <!-- FAQ 1 -->
+            <details class="faq-card">
+                <summary>
+                    <span>1. The Big Rule: How do I start an intervention?</span>
+                </summary>
+                <div class="answer-content">
+                    <p class="mb-4">First decision: <strong>Is the student enrolled in OFSDP?</strong></p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="p-4 bg-green-50 rounded-lg border border-green-200">
+                            <span class="badge-green">YES</span>
+                            <p class="mt-2 font-bold text-green-800">Track MINUTES</p>
+                        </div>
+                        <div class="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                            <span class="badge-green" style="background-color: #e0f2fe; color: #0369a1;">NO</span>
+                            <p class="mt-2 font-bold text-blue-800">Track DAYS</p>
+                        </div>
+                    </div>
+                    <div class="mt-4 p-3 bg-red-50 text-red-700 rounded text-sm font-semibold border-l-4 border-red-500">
+                        ⚠️ If this decision is wrong, the intervention will be wrong. Do not proceed until this is clear.
+                    </div>
+                </div>
+            </details>
+
+            <!-- FAQ 2 -->
+            <details class="faq-card">
+                <summary>
+                    <span>2. What SHOULD counselors do in Panorama?</span>
+                </summary>
+                <div class="answer-content">
+                    <ul class="space-y-3 should-box p-4 rounded-r-lg">
+                        <li class="flex items-start">
+                            <span class="text-green-600 font-bold mr-2">✓</span>
+                            Use Panorama to document attendance interventions for identified students.
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-green-600 font-bold mr-2">✓</span>
+                            Apply one monitoring method only (days or minutes, never both).
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-green-600 font-bold mr-2">✓</span>
+                            Use district‑established thresholds consistently.
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-green-600 font-bold mr-2">✓</span>
+                            Progress monitor students at regular intervals.
+                        </li>
+                    </ul>
+                </div>
+            </details>
+
+            <!-- FAQ 3 -->
+            <details class="faq-card">
+                <summary>
+                    <span>3. What are the common MISTAKES to avoid?</span>
+                </summary>
+                <div class="answer-content">
+                    <ul class="space-y-3 should-not-box p-4 rounded-r-lg">
+                        <li class="flex items-start">
+                            <span class="text-red-600 font-bold mr-2">✕</span>
+                            Do not track minutes for non‑OFSDP students.
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-red-600 font-bold mr-2">✕</span>
+                            Do not track days for OFSDP students.
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-red-600 font-bold mr-2">✕</span>
+                            Do not mix ADA periods and class‑by‑class tracking.
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-red-600 font-bold mr-2">✕</span>
+                            Do not create duplicate or overlapping interventions.
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-red-600 font-bold mr-2">✕</span>
+                            Do not wait for perfection before entering data.
+                        </li>
+                    </ul>
+                </div>
+            </details>
+
+            <!-- FAQ 4 -->
+            <details class="faq-card">
+                <summary>
+                    <span>4. How does Progress Monitoring work in plain language?</span>
+                </summary>
+                <div class="answer-content">
+                    <div class="space-y-4">
+                        <div class="border-b pb-3">
+                            <h4 class="font-bold text-navy-900 mb-1">Non-OFSDP Students</h4>
+                            <p><strong>Goal:</strong> Number of Days in Grading Period</p>
+                            <p class="text-sm text-gray-500 italic">Action: Track DAYS present.</p>
+                        </div>
+                        <div class="border-b pb-3">
+                            <h4 class="font-bold text-navy-900 mb-1">OFSDP Students</h4>
+                            <p><strong>Goal:</strong> Minutes earned tied to the OFSDP structure</p>
+                            <p class="text-sm text-gray-500 italic">Action: Track MINUTES earned.</p>
+                        </div>
+                        <p class="bg-gray-100 p-3 rounded text-sm">
+                            <strong>Note:</strong> Panorama is used for monitoring trends, not recreating Skyward.
+                        </p>
+                    </div>
+                </div>
+            </details>
+
+            <!-- FAQ 5 -->
+            <details class="faq-card">
+                <summary>
+                    <span>5. Do I track ADA only or all periods?</span>
+                </summary>
+                <div class="answer-content">
+                    <p>Track <strong>days</strong>, not individual periods, unless the student is OFSDP.</p>
+                </div>
+            </details>
+
+            <!-- FAQ 6 -->
+            <details class="faq-card">
+                <summary>
+                    <span>6. Can minutes be pulled automatically from Skyward?</span>
+                </summary>
+                <div class="answer-content">
+                    <p class="font-bold text-red-700">No.</p>
+                    <p>Minutes must be entered <strong>manually</strong>. They cannot be pulled automatically from Skyward or Tableau at this time.</p>
+                </div>
+            </details>
+
+            <!-- FAQ 7 -->
+            <details class="faq-card">
+                <summary>
+                    <span>7. What if I’m unsure I’m doing it right?</span>
+                </summary>
+                <div class="answer-content">
+                    <p><strong>Pause and ask.</strong> Confirmation is encouraged rather than guessing, as incorrect data entry affects intervention data integrity.</p>
+                </div>
+            </details>
+
+            <!-- FAQ 8 -->
+            <details class="faq-card">
+                <summary>
+                    <span>8. Where can I find Support & Resources?</span>
+                </summary>
+                <div class="answer-content">
+                    <ul class="space-y-4">
+                        <li class="flex items-center">
+                            <div class="w-8 h-8 rounded bg-blue-100 flex items-center justify-center mr-3">
+                                <span class="text-blue-600 font-bold">PDF</span>
+                            </div>
+                            <div>
+                                <p class="font-bold text-gray-800">Training Materials</p>
+                                <a href="https://pan-ed.com/lajoyadeck1526" target="_blank" class="link-style">Counselor Training & Consultation Deck (Jan 2026)</a>
+                            </div>
+                        </li>
+                        <li class="flex items-center">
+                            <div class="w-8 h-8 rounded bg-green-100 flex items-center justify-center mr-3">
+                                <span class="text-green-600 font-bold">!</span>
+                            </div>
+                            <div>
+                                <p class="font-bold text-gray-800">Direct Guidance</p>
+                                <span class="text-gray-600">Contact the Student Services / Attendance Team</span>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </details>
+
+        </div>
+
+        <!-- Footer Info -->
+        <footer class="mt-16 pt-8 border-t border-gray-300 text-sm text-center">
+            <p class="font-bold text-navy-900 mb-2">Single Source of Truth</p>
+            <p>Updated weekly based on real counselor questions. Clarifies expectations without changing policy.</p>
+            <p class="mt-4 text-gray-400">If guidance is not in this FAQ, it should be treated as pending clarification.</p>
+        </footer>
+    </main>
+
+</body>
+</html>
