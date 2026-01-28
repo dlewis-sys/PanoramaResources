@@ -1,0 +1,1135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Riverview Planning Simulation</title>
+    
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- React and ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel to translate JSX in the browser -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        /* Custom animations */
+        @keyframes fade-in-up {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in-up {
+            animation: fade-in-up 0.3s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-900">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useMemo } = React;
+
+        // --- ICONS (SVG replacements for Lucide-React to avoid build steps) ---
+        const IconBrain = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/><path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"/><path d="M17.599 6.5a3 3 0 0 0 .399-1.375"/><path d="M6.003 5.125A3 3 0 0 0 6.401 6.5"/><path d="M3.477 12.578c.07-1.225.244-2.453.526-3.678"/><path d="M20.523 12.578c-.07-1.225-.244-2.453-.526-3.678"/><path d="M20 17.5c.5 2.5-.5 4-3 4H7c-2.5 0-3.5-1.5-3-4"/></svg>
+        );
+        const IconPlay = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="6 3 20 12 6 21 6 3"/></svg>
+        );
+        const IconRotateCcw = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+        );
+        const IconMessageSquare = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        );
+        const IconArrowRight = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+        );
+        const IconCheckCircle = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        );
+        const IconAlertTriangle = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>
+        );
+        const IconXCircle = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>
+        );
+
+        // --- GAME LOGIC ---
+
+        const addRubric = (prev, delta) => {
+            const next = { ...prev };
+            Object.entries(delta || {}).forEach(([k, v]) => {
+                next[k] = (next[k] || 0) + v;
+            });
+            return next;
+        };
+
+        const scenarioData = {
+          intro: {
+            title: "Simulation: The Riverview Planning Call (Advanced)",
+            context:
+              "District: Riverview Public Schools (≈18,000 students). Year 2 adoption of Panorama Student Success.",
+            situation:
+              "You are on a call with the Director of T&L and 2 Coaches. They requested PD because 'Teachers are logging in, but mostly just looking at scores.'",
+            goal:
+              "Navigate a complex 9-step sensemaking cycle. Beware: 'Helpful' responses often shut down thinking. Look for the move that mediates the client's thinking, not just their feelings."
+          },
+          phases: [
+            {
+              id: "surface_1",
+              title: "Phase 1: SURFACE (The Opening)",
+              subtitle: "The Presenting Complaint",
+              clientTextByPath: {
+                neutral:
+                  "“We trained everyone on the platform last year, but it hasn’t really changed instruction. Teachers are logging in, mostly checking scores and moving on. We don’t want this to feel like another tool training.”"
+              },
+              options: [
+                {
+                  type: "solutioneer",
+                  text:
+                    "“I hear you loud and clear—tool fatigue is real. The good news is that the new 'Student Groups' feature is designed specifically to move them beyond scores. We can center the training on that?”",
+                  feedback:
+                    "🚫 Deceptive Solutioneering. You validated the feeling (good), but immediately pivoted to a feature as the savior. You skipped surfacing *why* they are only checking scores.",
+                  points: 0,
+                  path: "derailed",
+                  rubric: { surface: 0, restraint: -1 }
+                },
+                {
+                  type: "service",
+                  text:
+                    "“[Pause] That makes total sense. We definitely don't want to waste their time. What specific login numbers or usage data are you seeing that concerns you most?”",
+                  feedback:
+                    "⚠️ False Positive. You paused and validated, but probing for 'login numbers' is a technical detour. You need to understand the *instructional* gap, not the metric gap.",
+                  points: 1,
+                  path: "shallow",
+                  rubric: { surface: 1, restraint: 0 }
+                },
+                {
+                  type: "consultative",
+                  text:
+                    "“[Pause 3 seconds] So you’re seeing the activity (logins), but not the instructional shift you hoped for. When you say it hasn’t ‘changed instruction,’ what would you expect to see happening in a team meeting that isn’t happening yet?”",
+                  feedback:
+                    "✅ Strong consultative move. You paused, paraphrased the core tension (activity vs. impact), and asked for a concrete picture of the missing behavior.",
+                  points: 3,
+                  path: "deep",
+                  rubric: { surface: 2, restraint: 1 }
+                }
+              ]
+            },
+            {
+              id: "surface_2",
+              title: "Phase 2: SURFACE (Deepening)",
+              subtitle: "Probing the Evidence",
+              clientTextByPath: {
+                deep:
+                  "“Ideally? They’d be looking at the 'At-Risk' list and actually assigning interventions right there in the meeting. Right now, they see the red flag and just talk about the kid without a plan.”",
+                shallow:
+                  "“We just want them to use the data to make decisions. Right now it's just admiring the problem.”",
+                derailed:
+                  "“We just need them to click the 'Create Intervention' button. They aren't doing it.”"
+              },
+              optionsByPath: {
+                deep: [
+                  {
+                    type: "consultative",
+                    text:
+                      "“So the gap isn't 'seeing the data'—it's the bridge between noticing a need and committing to an action. What do you think is stopping them from assigning that intervention right now?”",
+                    feedback:
+                      "✅ Mediative Question. You pinpointed the exact breakdown (the bridge to action) and asked the client to hypothesize the cause, rather than guessing it yourself.",
+                    points: 3,
+                    path: "deep",
+                    rubric: { surface: 2, restraint: 1 }
+                  },
+                  {
+                    type: "solutioneer",
+                    text:
+                      "“That’s a classic workflow issue. [Pause] We can teach them the 'Quick Assign' shortcut in the PD. It takes the friction out of that exact step.”",
+                    feedback:
+                      "🚫 Feature Trap. You identified the problem correctly, but assumed a UI shortcut would solve a behavioral hesitation. You're solving before framing.",
+                    points: 0,
+                    path: "derailed",
+                    rubric: { surface: 0, restraint: -1 }
+                  },
+                  {
+                    type: "service",
+                    text:
+                      "“Understood. So the goal of the session should be ensuring every teacher enters at least one intervention by the end of the hour?”",
+                    feedback:
+                      "⚠️ Compliance Focus. This sounds rigorous, but it frames the PD as compliance (filling a box) rather than learning a practice.",
+                    points: 1,
+                    path: "shallow",
+                    rubric: { surface: 1, restraint: 0 }
+                  }
+                ],
+                shallow: [
+                  {
+                    type: "consultative",
+                    text:
+                      "“'Admiring the problem' is such a common trap. When they do that, is it because they don't trust the data, or because they don't have a shared menu of interventions to choose from?”",
+                    feedback:
+                      "✅ Forced Choice. By offering two distinct hypotheses, you help the client clarify the root cause (trust vs. resources).",
+                    points: 3,
+                    path: "deep",
+                    rubric: { surface: 1, restraint: 1 }
+                  },
+                  {
+                    type: "service",
+                    text:
+                      "“Got it. We can show them the 'Intervention Bank' so they have ideas.”",
+                    feedback:
+                      "⚠️ Premature. You're assuming they need ideas. They might need time, permission, or a process.",
+                    points: 1,
+                    path: "shallow",
+                    rubric: { surface: 0, restraint: 0 }
+                  },
+                  {
+                    type: "solutioneer",
+                    text:
+                      "“We should do a 'Click-Along' demo. If they follow us step-by-step, they'll get it.”",
+                    feedback:
+                      "🚫 Training wheel trap. Mimicry during PD rarely translates to independent practice.",
+                    points: 0,
+                    path: "derailed",
+                    rubric: { surface: 0, restraint: -1 }
+                  }
+                ]
+              }
+            },
+            {
+              id: "pivot",
+              title: "Phase 3: The Premature Ask",
+              subtitle: "Handling the 'Quick Fix' Request",
+              clientTextByPath: {
+                deep:
+                  "“I think they don't have a shared menu. But listen, we only have 90 minutes. Can we just walk them through the Intervention Bank and the Student Profile? That seems like the highest leverage.”",
+                shallow:
+                  "“They need to see the tools. Can we just do a demo of the Profile and Interventions?”",
+                derailed:
+                  "“Just show them the tool. That's what we need.”"
+              },
+              optionsByPath: {
+                deep: [
+                  {
+                    type: "service",
+                    text:
+                      "“I want to be respectful of your time, so yes—we can definitely cover those two areas. I’ll make sure the Intervention Bank is the star of the show.”",
+                    feedback:
+                      "⚠️ Order Taking. You used 'respectful of time' to justify abandoning the sensemaking. You're building the deck they asked for, not the one they need.",
+                    points: 1,
+                    path: "shallow",
+                    rubric: { frame: 0, restraint: -1 }
+                  },
+                  {
+                    type: "consultative",
+                    text:
+                      "“We can certainly look at those tools. But I'm hearing a tension: if we just 'walk them through' the menu without addressing *how* they choose from it as a team, we might end up back at 'admiring the problem.' Can we structure the time around a team protocol instead of a tour?”",
+                    feedback:
+                      "✅ The Pivot. You acknowledged the request ('we can look at those') but named the consequence of stopping there. You offered a 'Structure' (protocol) not a 'Topic' (features).",
+                    points: 3,
+                    path: "deep",
+                    rubric: { frame: 2, restraint: 2 }
+                  },
+                  {
+                    type: "solutioneer",
+                    text:
+                      "“Actually, if time is tight, the 'Playbook' feature is better than the Bank. Let's focus on that.”",
+                    feedback:
+                      "🚫 Feature Battling. You're debating which button is better, rather than debating the instructional goal.",
+                    points: 0,
+                    path: "derailed",
+                    rubric: { frame: 0, restraint: -1 }
+                  }
+                ],
+                shallow: [
+                  {
+                    type: "consultative",
+                    text:
+                      "“If we spend the 90 minutes demoing, my fear is they’ll know *where* to click but not *when*. Would you be open to spending half the time having them actually role-play a student intervention meeting using the data?”",
+                    feedback:
+                      "✅ Brave negotiation. You highlighted the risk of the client's request (where vs when) and proposed an active alternative.",
+                    points: 3,
+                    path: "deep",
+                    rubric: { frame: 2, restraint: 1 }
+                  },
+                  {
+                    type: "service",
+                    text:
+                      "“Sure. I can do a tight 45-minute demo and leave time for Q&A.”",
+                    feedback:
+                      "⚠️ The path of least resistance. It's safe, but it likely won't change the behavior you identified earlier.",
+                    points: 1,
+                    path: "shallow",
+                    rubric: { frame: 0, restraint: 0 }
+                  },
+                  {
+                    type: "solutioneer",
+                    text:
+                      "“I’ll send you a deck outlining that exact agenda by EOD.”",
+                    feedback:
+                      "🚫 Premature closure. You ended the thinking process just as it was getting interesting.",
+                    points: 0,
+                    path: "derailed",
+                    rubric: { frame: 0, restraint: -1 }
+                  }
+                ]
+              }
+            },
+            {
+              id: "frame_1",
+              title: "Phase 4: FRAME (Drafting)",
+              subtitle: "Naming the Gap",
+              clientTextByPath: {
+                deep:
+                  "“A team protocol... that’s interesting. Principals have been asking for that. But teachers are exhausted. If we ask them to learn a new 'process,' they might revolt.”",
+                shallow:
+                  "“Role-play might be too much. They are really tired. Just keep it simple.”",
+                derailed:
+                  "“Let's stick to the demo.”"
+              },
+              optionsByPath: {
+                deep: [
+                  {
+                    type: "solutioneer",
+                    text:
+                      "“I totally get that. We can automate the process using 'Smart Groups' so they don't have to think about it. The system does the heavy lifting.”",
+                    feedback:
+                      "🚫 Tech-washing. You're trying to solve cultural exhaustion with automation. It minimizes the complexity of teaching.",
+                    points: 0,
+                    path: "shallow",
+                    rubric: { frame: 0, restraint: -1 }
+                  },
+                  {
+                    type: "consultative",
+                    text:
+                      "“That’s a real constraint. What if we framed the problem not as 'learning a new process,' but as 'simplifying the meetings they already have'? If the tool cuts their prep time in half, would they be open to a structured way of using it?”",
+                    feedback:
+                      "✅ Reframing Value. You acknowledged the exhaustion but reframed the solution as 'simplification' rather than 'addition.'",
+                    points: 3,
+                    path: "deep",
+                    rubric: { frame: 2, restraint: 1 }
+                  },
+                  {
+                    type: "service",
+                    text:
+                      "“I hear you. Exhaustion is real. We can label the session 'Time-Saving Tips' and just show the protocol as an option, not a requirement.”",
+                    feedback:
+                      "⚠️ Dilution. By making the practice optional ('tips'), you reduce the chance of adoption to zero to avoid conflict.",
+                    points: 1,
+                    path: "shallow",
+                    rubric: { frame: 0, restraint: 0 }
+                  }
+                ],
+                shallow: [
+                  {
+                    type: "consultative",
+                    text:
+                      "“To keep it simple but effective: what is the *one* question you want every PLC to answer when they look at that Student Profile?”",
+                    feedback:
+                      "✅ Essentialism. You stopped fighting for 'complex' and fought for 'focused.' This is a great way to handle resistance.",
+                    points: 3,
+                    path: "deep",
+                    rubric: { frame: 1, restraint: 1 }
+                  },
+                  {
+                    type: "service",
+                    text:
+                      "“Okay. We will keep it very high level. No role-play.”",
+                    feedback:
+                      "⚠️ You are retreating. You are now designing the session you know won't work.",
+                    points: 1,
+                    path: "derailed",
+                    rubric: { frame: 0, restraint: 0 }
+                  },
+                  {
+                    type: "solutioneer",
+                    text:
+                      "“We can make it a video they watch on their own time? That way they aren't tired.”",
+                    feedback:
+                      "🚫 format shifting. You're solving an engagement problem with a format change, not a content change.",
+                    points: 0,
+                    path: "derailed",
+                    rubric: { frame: 0, restraint: -1 }
+                  }
+                ]
+              }
+            },
+            {
+              id: "frame_2",
+              title: "Phase 5: FRAME (Calibration)",
+              subtitle: "Handling Resistance",
+              clientTextByPath: {
+                deep:
+                  "“'Simplifying the meetings they already have'... I like that. The problem isn't the tool, it's that their current meetings are unstructured and long.”",
+                shallow:
+                  "“The one question... probably 'What do we do next?' But they don't know the answer.”",
+                derailed:
+                  "“Let's just show the features.”"
+              },
+              optionsByPath: {
+                deep: [
+                  {
+                    type: "service",
+                    text:
+                      "“Exactly. I'll put 'Streamlining Your PLC' as the title of the deck.”",
+                    feedback:
+                      "⚠️ Branding vs. Framing. You grabbed the title but didn't confirm the substance. What *is* the structure?”,",
+                    points: 1,
+                    path: "shallow",
+                    rubric: { frame: 0, restraint: 0 }
+                  },
+                  {
+                    type: "consultative",
+                    text:
+                      "“It sounds like we've found the right frame: This is about efficiency, not compliance. If we design the session to model that efficient meeting, are you comfortable with us asking principals to reinforce that structure afterward?”",
+                    feedback:
+                      "✅ Frame Check + Expansion. You confirmed the 'efficiency' frame and immediately tied it to the necessary leadership condition.",
+                    points: 3,
+                    path: "deep",
+                    rubric: { frame: 2, restraint: 1 }
+                  },
+                  {
+                    type: "solutioneer",
+                    text:
+                      "“Yes! The 'Meeting Agenda' tool in the platform literally structures the meeting for them. I'll show that.”",
+                    feedback:
+                      "🚫 Back to the tool. You're right, but you're selling the feature before selling the leadership agreement.",
+                    points: 0,
+                    path: "shallow",
+                    rubric: { frame: 0, restraint: -1 }
+                  }
+                ],
+                shallow: [
+                  {
+                    type: "consultative",
+                    text:
+                      "“If they don't know the answer ('what to do next'), then the session needs to focus on *finding* that answer in the Intervention Bank, not just staring at the Profile. Shall we frame the session as 'Finding Solutions for Struggling Students'?”",
+                    feedback:
+                      "✅ Re-anchoring. You took their vague fear and turned it into a clear, outcome-based session title.",
+                    points: 3,
+                    path: "deep",
+                    rubric: { frame: 1, restraint: 1 }
+                  },
+                  {
+                    type: "service",
+                    text:
+                      "“Okay, we will focus on 'What to do next' as the theme.”",
+                    feedback:
+                      "⚠️ Better, but a bit passive.",
+                    points: 1,
+                    path: "shallow",
+                    rubric: { frame: 0, restraint: 0 }
+                  },
+                  {
+                    type: "solutioneer",
+                    text:
+                      "“I can send them a list of 'Next Steps'.”",
+                    feedback:
+                      "🚫 Doing the work for them.",
+                    points: 0,
+                    path: "derailed",
+                    rubric: { frame: 0, restraint: -1 }
+                  }
+                ]
+              }
+            },
+            {
+              id: "test_1",
+              title: "Phase 6: TEST (The Logic)",
+              subtitle: "Stress-Testing the Hypothesis",
+              clientTextByPath: {
+                deep:
+                  "“Asking principals to reinforce it... that's the tricky part. They are as overwhelmed as the teachers. They might not attend the training.”",
+                shallow:
+                  "“'Finding Solutions'... that works. But what if they say the solutions in the Bank take too much time?”",
+                derailed:
+                  "“Okay.”"
+              },
+              optionsByPath: {
+                deep: [
+                  {
+                    type: "consultative",
+                    text:
+                      "“If the principals don't attend, and we train the teachers on a new efficiency protocol, what happens the next week when the principal runs the meeting the 'old' way?”",
+                    feedback:
+                      "✅ Predictive Question. You aren't arguing; you're walking them through the future failure scenario to help them see the risk.",
+                    points: 3,
+                    path: "deep",
+                    rubric: { test: 2, restraint: 1 }
+                  },
+                  {
+                    type: "solutioneer",
+                    text:
+                      "“We can record the session! Then principals can watch it whenever they have free time.”",
+                    feedback:
+                      "🚫 The 'Recording' Myth. Principals won't watch it. You're offering a technical fix for an adaptive leadership gap.",
+                    points: 0,
+                    path: "shallow",
+                    rubric: { test: 0, restraint: -1 }
+                  },
+                  {
+                    type: "service",
+                    text:
+                      "“I understand. We won't rely on the principals then. We'll just try to get the teachers excited enough to do it on their own.”",
+                    feedback:
+                      "⚠️ Wishful Thinking. You just agreed to a strategy (teacher-led change) that rarely works in this context.",
+                    points: 1,
+                    path: "shallow",
+                    rubric: { test: 0, restraint: 0 }
+                  }
+                ],
+                shallow: [
+                  {
+                    type: "consultative",
+                    text:
+                      "“If they say that, it's great data. It means they are engaging. But to prepare: should we pre-select 3 'low-prep' interventions to highlight, so we remove that objection upfront?”",
+                    feedback:
+                      "✅ Anticipating Barriers. You accepted the reality and proposed a design tweak to mitigate it.",
+                    points: 3,
+                    path: "deep",
+                    rubric: { test: 1, restraint: 1 }
+                  },
+                  {
+                    type: "service",
+                    text:
+                      "“I'll make sure to mention that the interventions are quick.”",
+                    feedback:
+                      "⚠️ Telling vs. Showing.",
+                    points: 1,
+                    path: "shallow",
+                    rubric: { test: 0, restraint: 0 }
+                  }
+                ]
+              }
+            },
+            {
+              id: "test_2",
+              title: "Phase 7: TEST (Stakeholders)",
+              subtitle: "The Reality Check",
+              clientTextByPath: {
+                deep:
+                  "“You're right. If the principal doesn't own it, it dies. Okay, I can probably get the principals to join for the first 15 minutes. What should we do with them in that time?”",
+                shallow:
+                  "“Yeah, pre-selecting low-prep ones is smart. Let's do that.”",
+                derailed:
+                  "“Okay.”"
+              },
+              optionsByPath: {
+                deep: [
+                  {
+                    type: "solutioneer",
+                    text:
+                      "“We can show them the 'Admin Dashboard' so they can track who is logging in. That usually gets their attention.”",
+                    feedback:
+                      "🚫 Wrong Metric. You just pointed leadership back to 'logins' (compliance) after spending 20 minutes arguing for 'efficiency' (quality).",
+                    points: 0,
+                    path: "shallow",
+                    rubric: { test: 0, restraint: -1 }
+                  },
+                  {
+                    type: "consultative",
+                    text:
+                      "“In those 15 mins, could we have them explicitly frame the 'Why'? 'We are using this tool to shorten your meetings and help students faster.' If they say that, the teachers will listen to us differently.”",
+                    feedback:
+                      "✅ Leveraging Authority. You're using the principals to set the stage for the frame you built.",
+                    points: 3,
+                    path: "deep",
+                    rubric: { test: 2, restraint: 1 }
+                  },
+                  {
+                    type: "service",
+                    text:
+                      "“That's a huge win. I'll just have them introduce me and welcome everyone.”",
+                    feedback:
+                      "⚠️ Low Bar. A generic welcome is wasted leverage.",
+                    points: 1,
+                    path: "shallow",
+                    rubric: { test: 0, restraint: 0 }
+                  }
+                ],
+                shallow: [
+                  {
+                    type: "consultative",
+                    text:
+                      "“Great. Now, imagine we are 45 minutes into the session. Teachers see the low-prep interventions. One teacher says 'I still don't know which student needs this.' What feature do we show *then*?”",
+                    feedback:
+                      "✅ Scenario Planning. You are stress-testing the flow to make sure the tool is introduced at the moment of need.",
+                    points: 3,
+                    path: "deep",
+                    rubric: { test: 1, restraint: 1 }
+                  }
+                ]
+              }
+            },
+            {
+              id: "commit_1",
+              title: "Phase 8: COMMIT (Success Criteria)",
+              subtitle: "Defining 'Good'",
+              clientTextByPath: {
+                deep:
+                  "“I love that. The principals frame it as 'efficiency.' We teach the protocol. Okay, so how do we know if it actually stuck?”",
+                shallow:
+                  "“I think we are ready to plan the agenda.”",
+                derailed:
+                  "“Let's send the invite.”"
+              },
+              optionsByPath: {
+                deep: [
+                  {
+                    type: "service",
+                    text:
+                      "“I can send a post-session survey asking if they felt the training was helpful.”",
+                    feedback:
+                      "⚠️ The 'Happy Sheet.' Satisfaction surveys don't measure behavior change.",
+                    points: 1,
+                    path: "shallow",
+                    rubric: { commit: 0, restraint: 0 }
+                  },
+                  {
+                    type: "consultative",
+                    text:
+                      "“Beyond a survey, what artifact would you want to see in a PLC two weeks from now? Maybe a completed 'Group' or one 'Intervention Plan' logged per team?”",
+                    feedback:
+                      "✅ Artifact-Based Evidence. You're asking for proof of practice, not proof of enjoyment.",
+                    points: 3,
+                    path: "deep",
+                    rubric: { commit: 2, restraint: 1 }
+                  },
+                  {
+                    type: "solutioneer",
+                    text:
+                      "“We'll check the login stats. If they go up, we win.”",
+                    feedback:
+                      "🚫 Full Circle Failure. You're back to the metric you identified as meaningless in Phase 1.",
+                    points: 0,
+                    path: "derailed",
+                    rubric: { commit: 0, restraint: -1 }
+                  }
+                ],
+                shallow: [
+                  {
+                    type: "consultative",
+                    text:
+                      "“One last check before agenda: 30 days after this PD, what is the one thing you want to see different in the system? Is it 'More Logins' or 'More Interventions Created'?”",
+                    feedback:
+                      "✅ Final Calibration. You're forcing clarity one last time.",
+                    points: 3,
+                    path: "deep",
+                    rubric: { commit: 1, restraint: 1 }
+                  }
+                ]
+              }
+            },
+            {
+              id: "commit_2",
+              title: "Phase 9: COMMIT (Next Steps)",
+              subtitle: "The Agreement",
+              clientTextByPath: {
+                deep:
+                  "“One intervention plan per team. That’s the goal. If we see that, we know they are discussing kids and doing something about it. Let's build the session around getting them to that first plan.”",
+                shallow:
+                  "“More interventions. Definitely.”",
+                derailed:
+                  "“Let's do this.”"
+              },
+              optionsByPath: {
+                deep: [
+                  {
+                    type: "consultative",
+                    text:
+                      "“Done. I will design the 'Efficiency Protocol' agenda to lead to that outcome, and I'll draft the talking points for the principals. I'll send both by Friday.”",
+                    feedback:
+                      "✅ Closed the Loop. You confirmed the design, the outcome, and the leadership enablement. This is a complete consultative cycle.",
+                    points: 3,
+                    path: "deep",
+                    rubric: { commit: 2, restraint: 1 }
+                  },
+                  {
+                    type: "service",
+                    text:
+                      "“Awesome. I'll send the agenda.”",
+                    feedback:
+                      "⚠️ Fine, but you missed the chance to reiterate the principal's role one last time.",
+                    points: 1,
+                    path: "deep",
+                    rubric: { commit: 0, restraint: 0 }
+                  },
+                  {
+                    type: "solutioneer",
+                    text:
+                      "“I'll set up the 'Intervention Campaigns' for you so it's ready to go.”",
+                    feedback:
+                      "🚫 Over-functioning. Don't do the work for them; enable them to do it.",
+                    points: 0,
+                    path: "shallow",
+                    rubric: { commit: 0, restraint: -1 }
+                  }
+                ],
+                shallow: [
+                  {
+                    type: "consultative",
+                    text:
+                      "“Great. I'll design the session to drive toward 'One Intervention.' I'll send the draft tomorrow.”",
+                    feedback:
+                      "✅ Solid finish.",
+                    points: 3,
+                    path: "deep",
+                    rubric: { commit: 1, restraint: 1 }
+                  }
+                ]
+              }
+            }
+          ]
+        };
+
+        const Badge = ({ tone, children }) => {
+          const map = {
+            green: "bg-green-100 text-green-700",
+            yellow: "bg-yellow-100 text-yellow-700",
+            red: "bg-red-100 text-red-700",
+            slate: "bg-slate-100 text-slate-700",
+            indigo: "bg-indigo-100 text-indigo-700"
+          };
+          return (
+            <span className={"px-2 py-1 rounded text-xs font-bold " + (map[tone] || map.slate)}>
+              {children}
+            </span>
+          );
+        };
+
+        const RubricRow = ({ label, value, max = 8 }) => {
+          const pct = Math.max(0, Math.min(100, Math.round((value / max) * 100)));
+          return (
+            <div className="space-y-1">
+              <div className="flex justify-between text-sm">
+                <span className="font-medium text-slate-600">{label}</span>
+                <span className="font-bold text-slate-800">{value}</span>
+              </div>
+              <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
+                <div className="h-2 bg-indigo-600" style={{ width: pct + "%" }} />
+              </div>
+            </div>
+          );
+        };
+
+        function SimulationApp() {
+          const [phaseIdx, setPhaseIdx] = useState("intro"); // intro | 0..3 | summary
+          const [path, setPath] = useState("neutral"); // deep | shallow | derailed | neutral
+          const [score, setScore] = useState(0);
+          const [rubric, setRubric] = useState({
+            surface: 0,
+            frame: 0,
+            test: 0,
+            commit: 0,
+            restraint: 0
+          });
+          const [feedback, setFeedback] = useState(null);
+          const [history, setHistory] = useState([]);
+
+          const handleStart = () => {
+            setPhaseIdx(0);
+            setPath("neutral");
+            setScore(0);
+            setRubric({ surface: 0, frame: 0, test: 0, commit: 0, restraint: 0 });
+            setHistory([]);
+            setFeedback(null);
+          };
+
+          const currentPhase = useMemo(() => {
+            if (typeof phaseIdx === "number") return scenarioData.phases[phaseIdx];
+            return null;
+          }, [phaseIdx]);
+
+          const currentOptions = useMemo(() => {
+            if (!currentPhase) return [];
+            // Phase 1 uses .options; later phases use .optionsByPath[path]
+            if (currentPhase.options) return currentPhase.options;
+            const byPath = currentPhase.optionsByPath || {};
+            return byPath[path] || byPath.shallow || [];
+          }, [currentPhase, path]);
+
+          const currentClientText = useMemo(() => {
+            if (!currentPhase) return "";
+            const byPath = currentPhase.clientTextByPath || {};
+            return byPath[path] || byPath.neutral || currentPhase.clientText || "";
+          }, [currentPhase, path]);
+
+          const handleOptionSelect = (opt) => setFeedback(opt);
+
+          const handleNext = () => {
+            if (!feedback) return;
+
+            setScore((s) => s + (feedback.points || 0));
+            setRubric((r) => addRubric(r, feedback.rubric));
+
+            // update path for branching
+            if (feedback.path) setPath(feedback.path);
+
+            // history for summary
+            setHistory((h) => [
+              ...h,
+              {
+                phase: currentPhase.title,
+                result: feedback.type,
+                pathAfter: feedback.path || path
+              }
+            ]);
+
+            setFeedback(null);
+            if (typeof phaseIdx === "number" && phaseIdx < scenarioData.phases.length - 1) {
+              setPhaseIdx(phaseIdx + 1);
+            } else {
+              setPhaseIdx("summary");
+            }
+          };
+
+          const getStanceMessage = () => {
+            // Use both total score and restraint as a guardrail
+            if (score >= 10 && rubric.restraint >= 2) {
+              return {
+                title: "Master Consultant",
+                desc: "You consistently surfaced success criteria, framed tentatively, tested assumptions, and committed based on impact—not feature coverage.",
+                color: "text-green-600"
+              };
+            }
+            if (score >= 6) {
+              return {
+                title: "Helpful Partner",
+                desc: "You were responsive and supportive, but sometimes moved to logistics or coverage before fully clarifying the problem and success criteria.",
+                color: "text-yellow-600"
+              };
+            }
+            return {
+              title: "Technical Expert",
+              desc: "You tended to lead with tools, coverage, or resources. Efficient, but it risks missing the adaptive problem and producing low adoption impact.",
+              color: "text-red-600"
+            };
+          };
+
+          // Helper for rendering the correct feedback icon
+          const getFeedbackIcon = (points) => {
+            if (points === 3) return <IconCheckCircle className="w-8 h-8" />;
+            if (points === 1) return <IconAlertTriangle className="w-8 h-8" />;
+            return <IconXCircle className="w-8 h-8" />;
+          };
+
+          // Intro
+          if (phaseIdx === "intro") {
+            return (
+              <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50 p-6 font-sans">
+                <div className="max-w-2xl bg-white rounded-xl shadow-lg overflow-hidden">
+                  <div className="bg-indigo-600 p-6 text-white text-center">
+                    <div className="flex justify-center mb-3">
+                      <IconBrain className="w-12 h-12" />
+                    </div>
+                    <h1 className="text-3xl font-bold">{scenarioData.intro.title}</h1>
+                    <p className="opacity-90 mt-2">Branching consultative simulator + rubric feedback</p>
+                  </div>
+                  <div className="p-8 space-y-6">
+                    <div className="bg-slate-100 p-4 rounded-lg border-l-4 border-indigo-500">
+                      <h3 className="font-bold text-slate-700">Context</h3>
+                      <p className="text-slate-600">{scenarioData.intro.context}</p>
+                    </div>
+                    <div className="space-y-3">
+                      <p className="text-lg text-slate-800">
+                        <strong>Scenario:</strong> {scenarioData.intro.situation}
+                      </p>
+                      <p className="text-slate-600 italic">{scenarioData.intro.goal}</p>
+                    </div>
+
+                    <div className="bg-indigo-50 p-4 rounded-lg border border-indigo-100">
+                      <p className="text-indigo-900 font-bold text-sm mb-1">Branching note</p>
+                      <p className="text-indigo-800 text-sm">
+                        Your choices change what the client reveals next. Strong discovery unlocks deeper context; feature-leading narrows options.
+                      </p>
+                    </div>
+
+                    <button
+                      onClick={handleStart}
+                      className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg flex items-center justify-center gap-2 transition-all"
+                    >
+                      Start Planning Call
+                      <span className="ml-2 inline-block"><IconPlay className="w-6 h-6" /></span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          }
+
+          // Summary
+          if (phaseIdx === "summary") {
+            const finalResult = getStanceMessage();
+
+            return (
+              <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50 p-6 font-sans">
+                <div className="max-w-3xl w-full bg-white rounded-xl shadow-lg overflow-hidden">
+                  <div className="bg-slate-900 p-6 text-white text-center">
+                    <h1 className="text-2xl font-bold">Simulation Debrief</h1>
+                    <p className="text-slate-200 text-sm mt-1">Stance + rubric subscores</p>
+                  </div>
+
+                  <div className="p-8 space-y-8">
+                    <div className="text-center">
+                      <p className="text-sm uppercase tracking-wide text-slate-500 font-bold">Your Stance</p>
+                      <h2 className={"text-4xl font-bold my-2 " + finalResult.color}>{finalResult.title}</h2>
+                      <p className="text-slate-600 max-w-2xl mx-auto">{finalResult.desc}</p>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-6">
+                      <div className="bg-slate-50 rounded-lg p-6 border border-slate-200">
+                        <h3 className="font-bold text-slate-800 mb-4">Rubric Subscores</h3>
+                        <div className="space-y-4">
+                          <RubricRow label="Surface" value={rubric.surface} />
+                          <RubricRow label="Frame" value={rubric.frame} />
+                          <RubricRow label="Test" value={rubric.test} />
+                          <RubricRow label="Commit" value={rubric.commit} />
+                          <RubricRow label="Restraint" value={rubric.restraint} max={6} />
+                        </div>
+                        <div className="mt-4 text-xs text-slate-500">
+                          Tip: Restraint scores go down when you lead with tools/feature tours before problem clarity.
+                        </div>
+                      </div>
+
+                      <div className="bg-slate-50 rounded-lg p-6 border border-slate-200">
+                        <h3 className="font-bold text-slate-800 mb-4">Path Trace</h3>
+                        <div className="space-y-3">
+                          {history.map((step, idx) => (
+                            <div
+                              key={idx}
+                              className="flex items-center justify-between text-sm border-b border-slate-200 pb-2 last:border-0"
+                            >
+                              <div className="space-y-1">
+                                <div className="font-medium text-slate-700">{step.phase}</div>
+                                <div className="text-xs text-slate-500">Path after choice: <span className="font-bold">{step.pathAfter}</span></div>
+                              </div>
+                              <div>
+                                {step.result === "consultative" ? (
+                                  <Badge tone="green">CONSULTATIVE</Badge>
+                                ) : step.result === "service" ? (
+                                  <Badge tone="yellow">SERVICE</Badge>
+                                ) : (
+                                  <Badge tone="red">FEATURE-LED</Badge>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-indigo-50 p-5 rounded-lg border border-indigo-100">
+                      <h4 className="font-bold text-indigo-900 mb-2">Student Success Alignment (What “good” tended to mean)</h4>
+                      <p className="text-indigo-900 text-sm">
+                        The strongest path typically reframed the goal from “teachers know features” to
+                        “teachers and principals share a routine for using Student Overview / Reports to make instructional decisions in PLCs.”
+                        Tools (Student Profile, Groups, Interventions, Support Notes, Playbook) become enablers only after the practice change is clear.
+                      </p>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <button
+                        onClick={handleStart}
+                        className="w-full py-3 bg-slate-900 hover:bg-slate-950 text-white font-bold rounded-lg flex items-center justify-center gap-2 transition-all"
+                      >
+                        <span className="mr-2 inline-block"><IconRotateCcw className="w-5 h-5" /></span>
+                        Try Again
+                      </button>
+
+                      <div className="w-full bg-white border rounded-lg p-4">
+                        <p className="text-sm font-bold text-slate-700 mb-1">One next move to practice</p>
+                        <p className="text-sm text-slate-600">
+                          If you default to coverage: ask one question that forces success criteria
+                          (“What would we see happening in PLCs if this is working?”) before discussing tools.
+                        </p>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+              </div>
+            );
+          }
+
+          // Main loop UI
+          const stepNum = phaseIdx + 1;
+          const totalSteps = scenarioData.phases.length;
+
+          const badgeForPath = (p) => {
+            if (p === "deep") return <Badge tone="green">DEEP DISCOVERY</Badge>;
+            if (p === "shallow") return <Badge tone="yellow">SHALLOW DISCOVERY</Badge>;
+            if (p === "derailed") return <Badge tone="red">DERAILED</Badge>;
+            return <Badge tone="slate">NEUTRAL</Badge>;
+          };
+
+          return (
+            <div className="min-h-screen bg-slate-100 p-4 md:p-8 font-sans flex justify-center items-start">
+              <div className="max-w-3xl w-full space-y-6">
+
+                {/* Progress Header */}
+                <div className="flex justify-between items-center bg-white p-4 rounded-lg shadow-sm">
+                  <div className="text-sm font-bold text-slate-500 uppercase tracking-wider">
+                    Step {stepNum} of {totalSteps}:{" "}
+                    <span className="text-indigo-600">{currentPhase.title}</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    {badgeForPath(path)}
+                    <div className="flex space-x-1">
+                      {[...Array(totalSteps)].map((_, i) => (
+                        <div
+                          key={i}
+                          className={
+                            "h-2 w-3 rounded-full " + (i <= phaseIdx ? "bg-indigo-600" : "bg-slate-200")
+                          }
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Client Card */}
+                <div className="bg-white rounded-xl shadow-md border-l-8 border-indigo-500 overflow-hidden">
+                  <div className="bg-indigo-50 p-3 flex items-center gap-2 text-indigo-900 font-bold text-xs uppercase tracking-wide">
+                    <IconMessageSquare className="w-4 h-4" />
+                    Client Voice
+                  </div>
+                  <div className="p-6 md:p-8">
+                    <p className="text-xl md:text-2xl font-serif text-slate-800 leading-relaxed">
+                      {currentClientText}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Options Area */}
+                {!feedback ? (
+                  <div className="space-y-4 animate-fade-in-up">
+                    <p className="text-slate-500 font-medium text-sm uppercase ml-1">
+                      Select your response:
+                    </p>
+
+                    {currentOptions.map((opt, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => handleOptionSelect(opt)}
+                        className="w-full text-left bg-white hover:bg-slate-50 border-2 border-transparent hover:border-indigo-200 p-5 rounded-lg shadow-sm transition-all duration-200 group"
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="mt-1 min-w-[24px] h-6 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center text-xs font-bold group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                            {String.fromCharCode(65 + idx)}
+                          </div>
+                          <div className="space-y-2">
+                            <div className="text-slate-800 text-lg group-hover:text-slate-900">
+                              {opt.text}
+                            </div>
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div
+                    className={
+                      "rounded-xl shadow-lg p-6 border-2 animate-fade-in-up " +
+                      (feedback.points === 3
+                        ? "bg-green-50 border-green-200"
+                        : feedback.points === 1
+                        ? "bg-yellow-50 border-yellow-200"
+                        : "bg-red-50 border-red-200")
+                    }
+                  >
+                    <div className="flex items-start gap-4">
+                      <div
+                        className={
+                          "p-3 rounded-full " +
+                          (feedback.points === 3
+                            ? "bg-green-100 text-green-700"
+                            : feedback.points === 1
+                            ? "bg-yellow-100 text-yellow-700"
+                            : "bg-red-100 text-red-700")
+                        }
+                      >
+                        {getFeedbackIcon(feedback.points)}
+                      </div>
+
+                      <div className="flex-1">
+                        <div className="mb-2">
+                          {feedback.type === "consultative" && <Badge tone="green">Consultative</Badge>}
+                          {feedback.type === "service" && <Badge tone="yellow">Service</Badge>}
+                          {feedback.type === "solutioneer" && <Badge tone="red">Feature-led</Badge>}
+                        </div>
+
+                        <h3
+                          className={
+                            "text-lg font-bold mb-1 " +
+                            (feedback.points === 3
+                              ? "text-green-900"
+                              : feedback.points === 1
+                              ? "text-yellow-900"
+                              : "text-red-900")
+                          }
+                        >
+                          {feedback.points === 3
+                            ? "Strong consultative move"
+                            : feedback.points === 1
+                            ? "Okay, but limited"
+                            : "Missed opportunity"}
+                        </h3>
+
+                        <p className="text-slate-700 mb-4 leading-relaxed">{feedback.feedback}</p>
+
+                        <div className="bg-white/70 rounded-lg p-4 border border-slate-200 mb-4">
+                          <div className="flex items-center justify-between">
+                            <div className="text-sm font-bold text-slate-700">Rubric impact (this move)</div>
+                            <div className="flex gap-2">
+                              {feedback.rubric?.surface ? <Badge tone="indigo">Surface +{feedback.rubric.surface}</Badge> : null}
+                              {feedback.rubric?.frame ? <Badge tone="indigo">Frame +{feedback.rubric.frame}</Badge> : null}
+                              {feedback.rubric?.test ? <Badge tone="indigo">Test +{feedback.rubric.test}</Badge> : null}
+                              {feedback.rubric?.commit ? <Badge tone="indigo">Commit +{feedback.rubric.commit}</Badge> : null}
+                              {feedback.rubric?.restraint ? (
+                                <Badge tone={feedback.rubric.restraint > 0 ? "green" : "red"}>
+                                  Restraint {feedback.rubric.restraint > 0 ? "+" : ""}{feedback.rubric.restraint}
+                                </Badge>
+                              ) : null}
+                            </div>
+                          </div>
+                          <div className="text-xs text-slate-600 mt-2">
+                            Path will shift to: <span className="font-bold">{feedback.path}</span>
+                          </div>
+                        </div>
+
+                        <button
+                          onClick={handleNext}
+                          className={
+                            "px-6 py-2 rounded-lg font-bold text-white flex items-center gap-2 transition-transform hover:scale-105 " +
+                            (feedback.points === 3
+                              ? "bg-green-600 hover:bg-green-700"
+                              : feedback.points === 1
+                              ? "bg-yellow-600 hover:bg-yellow-700"
+                              : "bg-red-600 hover:bg-red-700")
+                          }
+                        >
+                          Continue
+                          <span className="ml-2 inline-block"><IconArrowRight className="w-5 h-5" /></span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Tiny footer hint */}
+                <div className="text-xs text-slate-500 px-1">
+                  Tip: In Student Success, tools enable practice—but consultative calls earn the right to name tools by clarifying the problem first.
+                </div>
+              </div>
+            </div>
+          );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<SimulationApp />);
+    </script>
+</body>
+</html>
