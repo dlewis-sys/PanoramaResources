@@ -45,7 +45,7 @@
         return <i data-lucide={name} className={className} aria-hidden="true"></i>;
       }
 
-      // Panorama Academy links (from your Academy spreadsheet + a few additional Student Success articles you referenced earlier)
+      // Panorama Academy links
       const ACADEMY_LINKS = {
         studentsOverview:
           "https://academy.panoramaed.com/hc/en-us/articles/10713910312724-Students-Overview-in-Student-Success",
@@ -57,64 +57,63 @@
           "https://academy.panoramaed.com/hc/en-us/articles/10713957751700-Creating-Custom-Reports",
         studentGroups:
           "https://academy.panoramaed.com/hc/en-us/articles/10713910398612-How-to-Create-Student-Groups",
-
         interventionsDashboard:
           "https://academy.panoramaed.com/hc/en-us/articles/15577476217236-Interventions-Dashboard-Overview",
         interventionsDashboardUseCases:
           "https://academy.panoramaed.com/hc/en-us/articles/16528578220820-Use-Cases-for-Interventions-Dashboard",
         progressMonitoring:
           "https://academy.panoramaed.com/hc/en-us/articles/10713910722708-Progress-Monitoring-for-Interventions",
-
-        // intervention plan resources (commonly paired with Tiered Supports workflows)
         interventionPlans:
           "https://academy.panoramaed.com/hc/en-us/articles/10713911360404-Your-Intervention-Plans-and-Group-Plan-Page",
         interventionPlansGettingStarted:
           "https://academy.panoramaed.com/hc/en-us/articles/29021430436884-Getting-Started-Guide-Supporting-Students-with-Intervention-Plans",
-
         checkInsGettingStarted:
           "https://academy.panoramaed.com/hc/en-us/articles/29022080818836-Getting-Started-Guide-Navigating-Check-Ins",
         checkInsUseCases:
           "https://academy.panoramaed.com/hc/en-us/articles/15328335007636-Check-ins-Use-Cases",
-
         playbookGettingStarted:
           "https://academy.panoramaed.com/hc/en-us/articles/29023134996756-Getting-Started-Guide-Navigating-Panorama-s-Playbook",
       };
 
-      // Global roles (can be overridden per practice if needed)
       const BASE_ROLES = {
-        teacher: {
-          id: "teacher",
-          title: "Teachers",
-          icon: "user-circle",
-          focus: "Student-Level Responsiveness",
-        },
-        mtss: {
-          id: "mtss",
-          title: "MTSS Teams",
-          icon: "layers",
-          focus: "Systemic Intervention & Monitoring",
-        },
-        leader: {
-          id: "leader",
-          title: "School Leaders",
-          icon: "building-2",
-          focus: "Tier 1 Trends & Systems",
-        },
-        district: {
-          id: "district",
-          title: "District Leaders",
-          icon: "bar-chart-3",
-          focus: "System-Level Allocation",
-        },
+        teacher: { id: "teacher", title: "Teachers", icon: "user-circle", focus: "Student-Level Responsiveness" },
+        mtss: { id: "mtss", title: "MTSS Teams", icon: "layers", focus: "Systemic Intervention & Monitoring" },
+        leader: { id: "leader", title: "School Leaders", icon: "building-2", focus: "Tier 1 Trends & Systems" },
+        district: { id: "district", title: "District Leaders", icon: "bar-chart-3", focus: "System-Level Allocation" },
       };
 
-      // Two-practice hub (proof of scalability)
+      // Alignment key language (what the chip MEANS)
+      const LEVERAGE_KEY = [
+        {
+          label: "🟢 Primary Leverage",
+          meaning:
+            "Panorama is a primary system for doing the work. Teams should expect core routines and evidence to live in-platform (not in parallel trackers).",
+          lookFor:
+            "Regular use, consistent routines, and artifacts in Panorama (groups, plans, monitoring, reports).",
+        },
+        {
+          label: "🟡 Supporting Leverage",
+          meaning:
+            "Panorama supports the work but does not carry the full routine alone. It strengthens visibility, coordination, or evidence, alongside other tools/processes.",
+          lookFor:
+            "Panorama adds context, flags needs, or provides evidence that supports decisions made elsewhere.",
+        },
+        {
+          label: "⚪ Limited Alignment",
+          meaning:
+            "This practice is primarily enacted through other systems or routines. Panorama may provide helpful context but is not central to implementation.",
+          lookFor:
+            "Use Panorama for reference, but do not expect full practice execution in-platform.",
+        },
+      ];
+
       const PRACTICES = {
         "data-informed": {
           id: "data-informed",
           headerKicker: "POWER PRACTICES",
           headerTitle: "Data-Informed Instruction & Intervention",
-          statusChip: "Mockup (2 Practices)",
+          statusChip: "Hub Mockup",
+          suggestedStart: "Power Practice",
           alignment: {
             badge: "🟢",
             type: "Primary Leverage",
@@ -135,7 +134,7 @@
             body:
               "When implemented well, this practice strengthens Tier 1 instruction, enables early identification of students needing support, and creates a shared foundation for MTSS decision-making across classrooms, teams, and schools.",
             quote:
-              "This practice positions Panorama Student Success as a shared source of truth for understanding student trends across academics, attendance, behavior, and SEL.",
+              "Student Success functions as a shared source of truth for understanding student trends across academics, attendance, behavior, and SEL.",
           },
           roles: {
             teacher: {
@@ -145,7 +144,7 @@
                 "Use Student Profiles to inform differentiation and classroom supports",
                 "Bring data-informed observations into grade-level or MTSS discussions",
               ],
-              resource: { label: "Teacher Use: Students Overview", url: ACADEMY_LINKS.studentsOverview },
+              resource: { label: "Students Overview", url: ACADEMY_LINKS.studentsOverview },
             },
             mtss: {
               features: ["Students Overview", "Reports & Custom Reports"],
@@ -154,7 +153,7 @@
                 "Identify patterns across students and confirm follow-up actions",
                 "Monitor identified at-risk students for support appropriate-ness",
               ],
-              resource: { label: "MTSS: Creating Custom Reports", url: ACADEMY_LINKS.creatingCustomReports },
+              resource: { label: "Creating Custom Reports", url: ACADEMY_LINKS.creatingCustomReports },
             },
             leader: {
               features: ["School Overview", "Reports & Custom Reports"],
@@ -163,7 +162,7 @@
                 "Use reports for goal monitoring and staff data conversations",
                 "Reinforce consistent use of shared data sources across teams",
               ],
-              resource: { label: "Leader: District & School Overview", url: ACADEMY_LINKS.districtSchoolOverview },
+              resource: { label: "District & School Overview", url: ACADEMY_LINKS.districtSchoolOverview },
             },
             district: {
               features: ["District Overview", "Reports & Custom Reports"],
@@ -234,7 +233,7 @@
               { label: "Creating Custom Reports", url: ACADEMY_LINKS.creatingCustomReports },
             ],
             roleQuickLinks: [
-              { role: "Teachers", label: "Student Profile Page in Student Success", url: ACADEMY_LINKS.studentProfile },
+              { role: "Teachers", label: "Student Profile Page", url: ACADEMY_LINKS.studentProfile },
               { role: "MTSS Teams / Coordinators", label: "How to Create Student Groups", url: ACADEMY_LINKS.studentGroups },
               {
                 role: "Student Voice (Check-Ins)",
@@ -256,7 +255,8 @@
           id: "tiered-supports",
           headerKicker: "POWER PRACTICES",
           headerTitle: "Tiered Supports with Fidelity",
-          statusChip: "Mockup (2 Practices)",
+          statusChip: "Hub Mockup",
+          suggestedStart: "Panorama Alignment",
           alignment: {
             badge: "🟢",
             type: "Primary Leverage",
@@ -267,17 +267,16 @@
             why: [
               "Tier 2/3 supports require consistent documentation and clear ownership across teams.",
               "Progress monitoring is essential to determine whether supports are effective and should be adjusted.",
-              "Student Success functions as the system of record for plans, updates, and monitoring.",
+              "Student Success functions as a system of record for plans, updates, and monitoring.",
             ],
             leverageLabel: "Panorama Leverage Level",
           },
           narrative: {
-            lead:
-              "Tiered supports work best when they are consistent, documented, and monitored over time.",
+            lead: "Tiered supports work best when they are consistent, documented, and monitored over time.",
             body:
               "When implemented with fidelity, tiered supports reduce reactive referrals, strengthen shared ownership across teams, and ensure students receive the right support at the right time.",
             quote:
-              "This practice positions Student Success as the coordinated home for intervention plans and progress monitoring, reducing parallel tracking systems.",
+              "Student Success can centralize intervention plans and progress monitoring, reducing parallel tracking systems.",
           },
           roles: {
             teacher: {
@@ -287,7 +286,7 @@
                 "Document observations and bring them to team problem-solving routines",
                 "Collaborate on classroom supports aligned to intervention plans",
               ],
-              resource: { label: "Student Profiles", url: ACADEMY_LINKS.studentProfile },
+              resource: { label: "Student Profile", url: ACADEMY_LINKS.studentProfile },
             },
             mtss: {
               features: ["Intervention Plans", "Progress Monitoring"],
@@ -305,7 +304,7 @@
                 "Use trends to remove barriers and strengthen routines",
                 "Ensure teams reduce parallel trackers outside Panorama",
               ],
-              resource: { label: "Interventions Dashboard Overview", url: ACADEMY_LINKS.interventionsDashboard },
+              resource: { label: "Interventions Dashboard", url: ACADEMY_LINKS.interventionsDashboard },
             },
             district: {
               features: ["Reports & Custom Reports", "Interventions Dashboard"],
@@ -377,7 +376,7 @@
             ],
             roleQuickLinks: [
               { role: "MTSS Teams / Coordinators", label: "Interventions Dashboard Use Cases", url: ACADEMY_LINKS.interventionsDashboardUseCases },
-              { role: "Teachers", label: "Student Profile Page in Student Success", url: ACADEMY_LINKS.studentProfile },
+              { role: "Teachers", label: "Student Profile Page", url: ACADEMY_LINKS.studentProfile },
               { role: "Grouping", label: "How to Create Student Groups", url: ACADEMY_LINKS.studentGroups },
             ],
             nextLevel: [
@@ -389,9 +388,11 @@
         },
       };
 
+      // Defaults: start at TOC
       const DEFAULT_PRACTICE = "data-informed";
       const DEFAULT_ROLE = "teacher";
-      const DEFAULT_TAB = "practice";
+      const DEFAULT_TAB = "toc";
+      const VALID_TABS = ["toc", "practice", "alignment", "roadmap", "check-fors", "learn"];
 
       function getParams() {
         const sp = new URLSearchParams(window.location.search);
@@ -411,669 +412,35 @@
         window.history.replaceState({}, "", newUrl);
       }
 
-      function LeverageChip({ alignment }) {
+      function Modal({ title, children, onClose }) {
         return (
-          <span className="text-[10px] font-black px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 uppercase tracking-widest">
-            {alignment.leverageLabel}: {alignment.badge} {alignment.type}
-          </span>
-        );
-      }
-
-      function App() {
-        const initial = useMemo(() => getParams(), []);
-        const [selectedPractice, setSelectedPractice] = useState(
-          PRACTICES[initial.practice] ? initial.practice : DEFAULT_PRACTICE
-        );
-        const [selectedRole, setSelectedRole] = useState(
-          BASE_ROLES[initial.role] ? initial.role : DEFAULT_ROLE
-        );
-        const [activeTab, setActiveTab] = useState(
-          ["practice", "alignment", "roadmap", "check-fors", "learn"].includes(initial.tab)
-            ? initial.tab
-            : DEFAULT_TAB
-        );
-
-        const practice = useMemo(() => PRACTICES[selectedPractice], [selectedPractice]);
-        const roleBase = useMemo(() => BASE_ROLES[selectedRole], [selectedRole]);
-        const roleData = useMemo(() => practice.roles[selectedRole], [practice, selectedRole]);
-
-        // keep URL in sync
-        useEffect(() => {
-          setParams({ practice: selectedPractice, role: selectedRole, tab: activeTab });
-        }, [selectedPractice, selectedRole, activeTab]);
-
-        // Lucide re-render
-        useEffect(() => {
-          if (window.lucide && typeof window.lucide.createIcons === "function") {
-            window.lucide.createIcons();
-          }
-        }, [selectedPractice, selectedRole, activeTab]);
-
-        const tabs = [
-          { id: "practice", label: "Power Practice", icon: "book-open" },
-          { id: "alignment", label: "Panorama Alignment", icon: "link" },
-          { id: "roadmap", label: "Role Expectations", icon: "clipboard-list" },
-          { id: "check-fors", label: "Leader Look-Fors", icon: "eye" },
-          { id: "learn", label: "Learn & Do", icon: "graduation-cap" },
-        ];
-
-        const commonPitfalls = [
-          "Relying on a single data point",
-          "Data review without next steps",
-          "Using parallel spreadsheets outside of Panorama",
-        ];
-
-        return (
-          <div className="min-h-screen bg-slate-50 text-slate-800 font-sans selection:bg-indigo-100 selection:text-indigo-900">
-            {/* Top Banner Branding */}
-            <nav className="bg-[#003366] text-white p-4 shadow-lg sticky top-0 z-50">
-              <div className="max-w-7xl mx-auto flex justify-between items-center gap-6">
-                <div className="flex items-center gap-3 min-w-[220px]">
-                  <div className="bg-white p-1 rounded shadow-sm">
-                    <img
-                      src="https://upload.wikimedia.org/wikipedia/commons/4/4b/Seal_of_the_District_of_Columbia.svg"
-                      className="w-8 h-8"
-                      alt="DC Seal"
-                    />
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-tighter leading-none opacity-90">
-                      District of Columbia
-                    </p>
-                    <p className="text-lg font-black tracking-tight leading-none">
-                      Public Schools
-                    </p>
-                  </div>
+          <div className="fixed inset-0 z-[999] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-slate-900/40" onClick={onClose}></div>
+            <div className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden">
+              <div className="p-5 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Icon name="info" className="w-4 h-4 text-slate-600" />
+                  <h3 className="text-sm font-black uppercase tracking-widest text-slate-700">{title}</h3>
                 </div>
-
-                <div className="hidden lg:block text-right flex-1">
-                  <h1 className="text-xl font-bold tracking-tight uppercase">{practice.headerKicker}</h1>
-                  <p className="text-[10px] opacity-80 uppercase tracking-[0.2em] font-medium">
-                    {practice.headerTitle}
-                  </p>
-                </div>
-
-                <div className="hidden md:flex items-center gap-2">
-                  <span className="text-[10px] font-black px-3 py-1 rounded-full bg-white/10 border border-white/20 uppercase tracking-widest">
-                    {practice.statusChip}
-                  </span>
-                </div>
+                <button onClick={onClose} className="p-2 rounded-xl hover:bg-slate-100 transition" aria-label="Close">
+                  <Icon name="x" className="w-5 h-5 text-slate-600" />
+                </button>
               </div>
-            </nav>
-
-            <main className="max-w-7xl mx-auto p-4 md:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
-              {/* Sidebar */}
-              <aside className="lg:col-span-3 space-y-4">
-                {/* Practice Selector */}
-                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                  <div className="p-4 bg-slate-50 border-b border-slate-200">
-                    <h2 className="text-xs font-bold uppercase text-slate-500 tracking-wider flex items-center gap-2">
-                      <Icon name="layers-3" className="w-3 h-3" /> Select Power Practice
-                    </h2>
-                  </div>
-                  <div className="p-4">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                      Practice
-                    </label>
-                    <select
-                      value={selectedPractice}
-                      onChange={(e) => {
-                        const next = e.target.value;
-                        setSelectedPractice(next);
-                        setActiveTab("practice");
-                      }}
-                      className="mt-2 w-full p-3 rounded-xl border border-slate-200 bg-white text-sm font-bold text-slate-800"
-                    >
-                      {Object.values(PRACTICES).map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.headerTitle}
-                        </option>
-                      ))}
-                    </select>
-
-                    <p className="mt-3 text-xs text-slate-500 leading-relaxed">
-                      *Mockup selector. Structure demonstrates how additional practices will be added into one hub.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Role Switcher */}
-                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                  <div className="p-4 bg-slate-50 border-b border-slate-200">
-                    <h2 className="text-xs font-bold uppercase text-slate-500 tracking-wider flex items-center gap-2">
-                      <Icon name="user-circle" className="w-3 h-3" /> Select Role Perspective
-                    </h2>
-                  </div>
-                  <div className="p-2 space-y-1">
-                    {Object.values(BASE_ROLES).map((r) => (
-                      <button
-                        key={r.id}
-                        onClick={() => {
-                          setSelectedRole(r.id);
-                          setActiveTab("roadmap");
-                        }}
-                        className={`w-full text-left flex items-center gap-3 p-3 rounded-xl transition-all duration-200 ${
-                          selectedRole === r.id
-                            ? "bg-indigo-50 border-l-4 border-indigo-600 shadow-sm"
-                            : "hover:bg-slate-50 border-l-4 border-transparent text-slate-500"
-                        }`}
-                      >
-                        <Icon
-                          name={r.icon}
-                          className={`w-5 h-5 ${
-                            selectedRole === r.id ? "text-indigo-600" : "text-slate-400"
-                          }`}
-                        />
-                        <span className={`text-sm font-bold ${selectedRole === r.id ? "text-indigo-900" : ""}`}>
-                          {r.title}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Common Pitfalls */}
-                <div className="bg-amber-50 p-6 rounded-2xl border border-amber-200 shadow-sm">
-                  <h3 className="text-xs font-black uppercase mb-4 text-amber-700 tracking-widest flex items-center gap-2">
-                    <Icon name="alert-triangle" className="w-4 h-4" /> Common Pitfalls
-                  </h3>
-                  <ul className="space-y-3 text-xs text-amber-900 font-medium leading-relaxed">
-                    {commonPitfalls.map((p, i) => (
-                      <li key={i}>• {p}</li>
-                    ))}
-                  </ul>
-                </div>
-              </aside>
-
-              {/* Content */}
-              <section className="lg:col-span-9 space-y-6">
-                {/* Tabs */}
-                <nav className="flex flex-wrap gap-1 bg-white p-1 rounded-2xl shadow-sm border border-slate-200">
-                  {tabs.map((tab) => (
-                    <button
-                      key={tab.id}
-                      onClick={() => setActiveTab(tab.id)}
-                      className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 text-xs font-black transition-all rounded-xl uppercase tracking-widest ${
-                        activeTab === tab.id
-                          ? "bg-indigo-600 text-white shadow-lg"
-                          : "text-slate-500 hover:bg-slate-50"
-                      }`}
-                    >
-                      <Icon name={tab.icon} className="w-4 h-4" />
-                      {tab.label}
-                    </button>
-                  ))}
-                </nav>
-
-                <div className="bg-white rounded-[2rem] shadow-sm border border-slate-200 p-6 md:p-10 min-h-[600px] transition-all duration-500">
-                  {/* POWER PRACTICE */}
-                  {activeTab === "practice" && (
-                    <div className="animate-in duration-500 max-w-4xl">
-                      <header className="mb-10">
-                        <div className="flex items-start justify-between gap-4 flex-wrap">
-                          <div>
-                            <h2 className="text-3xl font-black text-slate-800 tracking-tight mb-2">
-                              Power Practice
-                            </h2>
-                            <p className="text-slate-500 font-medium">
-                              {practice.headerTitle}
-                            </p>
-                            <div className="h-1 w-20 bg-indigo-600 rounded-full mt-4"></div>
-                          </div>
-
-                          <div className="flex items-center gap-2 flex-wrap justify-end">
-                            <LeverageChip alignment={practice.alignment} />
-                            <span className="text-[10px] font-black px-3 py-1 rounded-full bg-slate-100 text-slate-700 uppercase tracking-widest">
-                              Hub Mockup
-                            </span>
-                          </div>
-                        </div>
-                      </header>
-
-                      <div className="space-y-6 text-slate-600 leading-relaxed">
-                        <p className="text-lg font-medium text-slate-800">{practice.narrative.lead}</p>
-                        <p>{practice.narrative.body}</p>
-
-                        {/* ACTUAL PRACTICE */}
-                        <section className="bg-slate-50 p-6 rounded-3xl border border-slate-200">
-                          <p className="text-xs font-black uppercase tracking-widest text-slate-500 mb-3">
-                            Actual Practice (DCPS Power Practice)
-                          </p>
-                          <p className="text-sm font-semibold text-slate-800 leading-relaxed">
-                            {practice.alignment.anchor}
-                          </p>
-                          <p className="text-[11px] text-slate-500 mt-3">
-                            <span className="font-bold">Source:</span> {practice.alignment.provenance}
-                          </p>
-                        </section>
-
-                        {/* PANORAMA ALIGNMENT */}
-                        <section className="bg-emerald-50 p-6 rounded-3xl border border-emerald-200">
-                          <div className="flex items-start justify-between gap-4 flex-wrap">
-                            <div>
-                              <p className="text-xs font-black uppercase tracking-widest text-emerald-700 mb-1">
-                                Panorama Alignment
-                              </p>
-                              <p className="text-xs text-emerald-900 font-semibold">
-                                {practice.alignment.leverageLabel}: {practice.alignment.badge} {practice.alignment.type}
-                              </p>
-                            </div>
-                            <div className="flex gap-2 flex-wrap">
-                              <button
-                                onClick={() => setActiveTab("learn")}
-                                className="bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-emerald-800 transition"
-                              >
-                                Go to Learn & Do
-                              </button>
-                              <button
-                                onClick={() => setActiveTab("alignment")}
-                                className="bg-white text-emerald-800 border border-emerald-200 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-emerald-50 transition"
-                              >
-                                View Alignment
-                              </button>
-                            </div>
-                          </div>
-
-                          <ul className="mt-4 text-sm text-emerald-900 font-medium space-y-2">
-                            {practice.alignment.why.map((x, i) => (
-                              <li key={i}>• {x}</li>
-                            ))}
-                          </ul>
-                        </section>
-
-                        <div className="bg-indigo-50 border-l-4 border-indigo-500 p-6 rounded-r-2xl italic font-semibold text-indigo-900">
-                          “{practice.narrative.quote}”
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* PANORAMA ALIGNMENT (Toolkit) */}
-                  {activeTab === "alignment" && (
-                    <div className="animate-in duration-500">
-                      <header className="mb-8">
-                        <div className="flex items-start justify-between gap-4 flex-wrap">
-                          <div>
-                            <h3 className="text-2xl font-black text-slate-800">Panorama Alignment</h3>
-                            <p className="text-slate-500 mt-2 text-sm">
-                              What to use (and why) for <strong className="text-indigo-600">{roleBase.title}</strong>
-                            </p>
-                          </div>
-                          <LeverageChip alignment={practice.alignment} />
-                        </div>
-                      </header>
-
-                      <div className="space-y-8">
-                        <div>
-                          <h4 className="text-xs font-black text-indigo-500 uppercase tracking-widest mb-4 flex items-center gap-2">
-                            <Icon name="external-link" className="w-3 h-3" />
-                            Primary Leverage Features (Student Success)
-                          </h4>
-
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            {practice.features.primary.map((f) => {
-                              const isFocus = roleData.features.includes(f.name);
-                              return (
-                                <div
-                                  key={f.name}
-                                  className={`p-6 bg-white border-2 rounded-3xl shadow-sm transition-all flex flex-col h-full relative ${
-                                    isFocus
-                                      ? "border-indigo-500 ring-4 ring-indigo-50 shadow-xl scale-[1.02]"
-                                      : "border-slate-50 hover:border-indigo-200"
-                                  }`}
-                                >
-                                  {isFocus && (
-                                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-indigo-600 text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-sm whitespace-nowrap z-10">
-                                      {roleBase.title} Focus
-                                    </div>
-                                  )}
-
-                                  <h5 className={`font-black text-lg mb-2 leading-tight ${isFocus ? "text-indigo-900" : "text-slate-800"}`}>
-                                    {f.name}
-                                  </h5>
-
-                                  <p className="text-xs text-slate-500 mb-4 flex-grow leading-relaxed">{f.desc}</p>
-
-                                  <div className={`p-3 rounded-xl mb-4 text-[10px] font-bold ${isFocus ? "bg-indigo-50 text-indigo-700" : "bg-slate-50 text-slate-700"}`}>
-                                    Impact: {f.use}
-                                  </div>
-
-                                  <a
-                                    href={f.url}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="text-indigo-600 text-[10px] font-black uppercase flex items-center gap-1 hover:underline mt-auto"
-                                  >
-                                    Resource: {f.link} <Icon name="arrow-right" className="w-3 h-3" />
-                                  </a>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-
-                        <div className="pt-6 border-t border-slate-100">
-                          <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">
-                            Supporting Features (as needed)
-                          </h4>
-
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {practice.features.supporting.map((f) => {
-                              const isFocus = roleData.features.includes(f.name);
-                              return (
-                                <div
-                                  key={f.name}
-                                  className={`p-5 rounded-2xl flex items-start gap-4 border ${
-                                    isFocus ? "bg-indigo-50/50 border-indigo-200 ring-2 ring-indigo-50" : "bg-slate-50 border-slate-100"
-                                  }`}
-                                >
-                                  <div className={`p-2 rounded-xl border ${isFocus ? "bg-indigo-100 border-indigo-200" : "bg-white border-slate-200"}`}>
-                                    <Icon name="layers" className={`w-4 h-4 ${isFocus ? "text-indigo-600" : "text-slate-400"}`} />
-                                  </div>
-
-                                  <div className="flex-1">
-                                    <div className="flex items-center gap-2 mb-1">
-                                      <h5 className={`font-bold text-sm ${isFocus ? "text-indigo-900" : "text-slate-800"}`}>
-                                        {f.name}
-                                      </h5>
-                                      {isFocus && (
-                                        <span className="text-[9px] font-black text-indigo-600 bg-indigo-100 px-1.5 py-0.5 rounded uppercase tracking-wider">
-                                          Focus
-                                        </span>
-                                      )}
-                                    </div>
-                                    <p className="text-xs text-slate-500 leading-relaxed">{f.desc}</p>
-
-                                    <div className="mt-3">
-                                      <a
-                                        href={f.url}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="text-indigo-600 text-[10px] font-black uppercase inline-flex items-center gap-1 hover:underline"
-                                      >
-                                        Resource: {f.link} <Icon name="arrow-right" className="w-3 h-3" />
-                                      </a>
-                                    </div>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* ROLE EXPECTATIONS */}
-                  {activeTab === "roadmap" && (
-                    <div className="animate-in duration-500">
-                      <header className="flex flex-wrap items-center justify-between gap-4 mb-10">
-                        <div className="flex items-center gap-6">
-                          <div className="p-5 bg-indigo-600 rounded-3xl text-white shadow-xl shadow-indigo-100 rotate-3">
-                            <Icon name={roleBase.icon} className="w-10 h-10" />
-                          </div>
-
-                          <div>
-                            <h2 className="text-3xl font-black text-slate-800 tracking-tight">
-                              {roleBase.title} Expectations
-                            </h2>
-                            <p className="text-slate-500 flex items-center gap-2 mt-1">
-                              Platform Emphasis:{" "}
-                              <span className="font-bold text-indigo-600 uppercase text-xs tracking-wider">
-                                {roleBase.focus}
-                              </span>
-                            </p>
-                          </div>
-                        </div>
-
-                        <LeverageChip alignment={practice.alignment} />
-                      </header>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-                        <div className="bg-slate-50 p-8 rounded-3xl border border-slate-100 shadow-inner">
-                          <h3 className="font-black text-slate-900 mb-6 flex items-center gap-2 text-sm uppercase tracking-widest">
-                            <Icon name="target" className="w-4 h-4 text-indigo-500" />
-                            What You Are Expected To Do
-                          </h3>
-
-                          <ul className="space-y-4">
-                            {roleData.responsibilities.map((item, i) => (
-                              <li key={i} className="flex gap-4 text-sm text-slate-600 leading-relaxed font-medium">
-                                <Icon name="check-circle-2" className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" />
-                                {item}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-
-                        <div className="bg-indigo-50/50 p-8 rounded-3xl border border-indigo-100 flex flex-col">
-                          <h3 className="font-black text-indigo-900 mb-6 flex items-center gap-2 text-sm uppercase tracking-widest">
-                            <Icon name="search" className="w-4 h-4 text-indigo-600" />
-                            Primary Toolkit Focus
-                          </h3>
-
-                          <div className="space-y-3 flex-grow">
-                            {roleData.features.map((f) => (
-                              <div
-                                key={f}
-                                className="p-4 bg-white rounded-2xl shadow-sm border border-indigo-200 font-bold text-indigo-900 text-sm flex justify-between items-center group cursor-default hover:border-indigo-400 transition-colors"
-                              >
-                                {f}
-                                <div className="w-2 h-2 rounded-full bg-indigo-500 group-hover:scale-125 transition-transform"></div>
-                              </div>
-                            ))}
-                          </div>
-
-                          <div className="mt-8">
-                            <p className="text-[10px] uppercase font-black text-indigo-400 mb-2">
-                              Access Resource
-                            </p>
-                            <a
-                              href={roleData.resource.url}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="w-full bg-indigo-600 text-white p-3 rounded-xl font-black text-xs uppercase flex items-center justify-center gap-2 hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-100"
-                            >
-                              {roleData.resource.label}
-                              <Icon name="arrow-right" className="w-4 h-4" />
-                            </a>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* LEADER LOOK-FORS */}
-                  {activeTab === "check-fors" && (
-                    <div className="animate-in duration-500">
-                      <header className="mb-10">
-                        <div className="flex items-center justify-between gap-4 flex-wrap">
-                          <div>
-                            <h3 className="text-2xl font-black text-slate-800 mb-2">
-                              Evidence of Implementation
-                            </h3>
-                            <p className="text-slate-500 font-medium">
-                              If Student Success is a <strong>Primary Leverage</strong> tool for this practice, leaders should expect to see evidence in-platform (not in parallel trackers).
-                            </p>
-                          </div>
-                          <LeverageChip alignment={practice.alignment} />
-                        </div>
-                      </header>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
-                        {practice.lookFors.map((lookfor, i) => (
-                          <div
-                            key={i}
-                            className="p-6 bg-slate-50 rounded-3xl border border-slate-100 flex gap-4 items-center"
-                          >
-                            <div className="w-10 h-10 bg-emerald-500 rounded-2xl flex items-center justify-center text-white flex-shrink-0 shadow-lg shadow-emerald-100">
-                              <Icon name="check-circle-2" className="w-5 h-5" />
-                            </div>
-                            <p className="text-sm font-bold text-slate-700 leading-tight">
-                              {lookfor}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-
-                      <div className="bg-[#003366] p-10 rounded-[2.5rem] text-white shadow-2xl relative overflow-hidden">
-                        <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full -mt-20 -mr-20"></div>
-
-                        <h4 className="font-black text-lg uppercase tracking-[0.2em] mb-6 flex items-center gap-3">
-                          <Icon name="message-square" className="text-amber-400 w-6 h-6" />
-                          Reflection Questions
-                        </h4>
-
-                        <div className="space-y-6 relative z-10">
-                          {practice.reflectionQs.map((q, idx) => (
-                            <div
-                              key={idx}
-                              className="flex gap-4 items-start bg-white/10 p-4 rounded-2xl backdrop-blur-sm border border-white/10"
-                            >
-                              <div className="font-mono text-indigo-300 font-black">
-                                0{idx + 1}
-                              </div>
-                              <p className="text-sm font-medium leading-relaxed">
-                                {q}
-                              </p>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* LEARN & DO */}
-                  {activeTab === "learn" && (
-                    <div className="animate-in duration-500">
-                      <header className="mb-10">
-                        <div className="flex items-center justify-between gap-4 flex-wrap">
-                          <div>
-                            <h3 className="text-2xl font-black text-slate-800 mb-2">
-                              Learn & Do
-                            </h3>
-                            <p className="text-slate-500 font-medium">
-                              Quick links to Panorama Academy resources aligned to this Power Practice.
-                            </p>
-                          </div>
-                          <LeverageChip alignment={practice.alignment} />
-                        </div>
-                      </header>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="bg-slate-50 p-6 rounded-3xl border border-slate-200">
-                          <h4 className="text-xs font-black uppercase tracking-widest text-slate-500 mb-4 flex items-center gap-2">
-                            <Icon name="sparkles" className="w-4 h-4" />
-                            Core Resources (Start Here)
-                          </h4>
-
-                          <ul className="space-y-3 text-sm font-semibold">
-                            {practice.learnDo.core.map((r, i) => (
-                              <li key={i}>
-                                <a className="text-indigo-700 hover:underline" href={r.url} target="_blank" rel="noreferrer">
-                                  {r.label}
-                                </a>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-
-                        <div className="bg-indigo-50/50 p-6 rounded-3xl border border-indigo-200">
-                          <h4 className="text-xs font-black uppercase tracking-widest text-indigo-700 mb-4 flex items-center gap-2">
-                            <Icon name="users" className="w-4 h-4" />
-                            Role-Based Quick Links
-                          </h4>
-
-                          <div className="space-y-4">
-                            {practice.learnDo.roleQuickLinks.map((r, i) => (
-                              <div key={i} className="bg-white p-4 rounded-2xl border border-indigo-100">
-                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
-                                  {r.role}
-                                </p>
-                                <a className="text-indigo-700 font-bold hover:underline text-sm" href={r.url} target="_blank" rel="noreferrer">
-                                  {r.label}
-                                </a>
-
-                                {r.secondaryUrl && (
-                                  <div className="mt-2">
-                                    <a className="text-indigo-600 hover:underline text-xs font-semibold" href={r.secondaryUrl} target="_blank" rel="noreferrer">
-                                      {r.secondaryLabel}
-                                    </a>
-                                  </div>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-
-                        <div className="bg-white p-6 rounded-3xl border border-slate-200 md:col-span-2">
-                          <h4 className="text-xs font-black uppercase tracking-widest text-slate-500 mb-4 flex items-center gap-2">
-                            <Icon name="rocket" className="w-4 h-4" />
-                            Optional Next-Level Resources
-                          </h4>
-
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            {practice.learnDo.nextLevel.map((r, i) => (
-                              <a
-                                key={i}
-                                className="p-4 rounded-2xl border border-slate-200 hover:border-indigo-300 transition-colors"
-                                href={r.url}
-                                target="_blank"
-                                rel="noreferrer"
-                              >
-                                <p className="text-sm font-black text-slate-800">{r.title}</p>
-                                <p className="text-xs text-slate-500 mt-1">{r.desc}</p>
-                              </a>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="mt-10 bg-slate-50 border border-slate-200 rounded-3xl p-6">
-                        <p className="text-xs font-black uppercase tracking-widest text-slate-500 mb-2">
-                          Shareable Deep Link
-                        </p>
-                        <p className="text-sm text-slate-700 font-semibold">
-                          This page is shareable with deep links. Example:
-                        </p>
-                        <p className="mt-2 text-xs font-mono bg-white border border-slate-200 p-3 rounded-xl text-slate-700 overflow-x-auto">
-                          ?practice={selectedPractice}&role={selectedRole}&tab={activeTab}
-                        </p>
-                        <p className="mt-2 text-xs text-slate-500">
-                          (Copy the full URL from your browser bar after selecting a practice, role, and tab.)
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </section>
-            </main>
-
-            <footer className="max-w-7xl mx-auto p-12 mt-12 border-t border-slate-200">
-              <div className="flex flex-col md:flex-row justify-between items-center gap-8">
-                <div className="flex items-center gap-4 opacity-40">
-                  <img
-                    src="https://upload.wikimedia.org/wikipedia/commons/4/4b/Seal_of_the_District_of_Columbia.svg"
-                    className="w-10 h-10 grayscale"
-                    alt="DC Seal"
-                  />
-                  <div className="text-xs font-bold leading-tight uppercase tracking-widest">
-                    District of Columbia
-                    <br />
-                    Public Schools
-                  </div>
-                </div>
-                <div className="flex flex-col items-end gap-1 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-                  <span>Panorama Student Success Guide</span>
-                  <span>Hub Mockup (2 Practices)</span>
-                </div>
-              </div>
-            </footer>
+              <div className="p-6">{children}</div>
+            </div>
           </div>
         );
       }
 
-      ReactDOM.createRoot(document.getElementById("root")).render(<App />);
-    </script>
-  </body>
-</html>
+      function LeverageChip({ alignment, onInfo }) {
+        return (
+          <div className="flex items-center gap-2 flex-wrap justify-end">
+            <span className="text-[10px] font-black px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 uppercase tracking-widest">
+              {alignment.leverageLabel}: {alignment.badge} {alignment.type}
+            </span>
+            <button
+              onClick={onInfo}
+              className="text-[10px] font-black px-3 py-1 rounded-full bg-white border border-slate-200 text-slate-700 uppercase tracking-widest hover:bg-slate-50 transition inline-flex items-center gap-2"
+              title="What does this mean?"
+            >
+              <Icon name="help-circle" class
