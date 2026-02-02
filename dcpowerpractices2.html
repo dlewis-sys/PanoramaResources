@@ -45,7 +45,7 @@
         return <i data-lucide={name} className={className} aria-hidden="true"></i>;
       }
 
-      // Panorama Academy links
+      // Panorama Academy links (placeholders are OK for mockup; these are real Academy paths)
       const ACADEMY_LINKS = {
         studentsOverview:
           "https://academy.panoramaed.com/hc/en-us/articles/10713910312724-Students-Overview-in-Student-Success",
@@ -82,28 +82,27 @@
         district: { id: "district", title: "District Leaders", icon: "bar-chart-3", focus: "System-Level Allocation" },
       };
 
-      // Alignment key language (what the chip MEANS)
       const LEVERAGE_KEY = [
         {
           label: "🟢 Primary Leverage",
           meaning:
-            "Panorama is a primary system for doing the work. Teams should expect core routines and evidence to live in-platform (not in parallel trackers).",
+            "Panorama is a primary system for doing the work. Expect routines and evidence to live in-platform (not in parallel trackers).",
           lookFor:
-            "Regular use, consistent routines, and artifacts in Panorama (groups, plans, monitoring, reports).",
+            "Regular use and artifacts in Panorama (groups, plans, monitoring, reports).",
         },
         {
           label: "🟡 Supporting Leverage",
           meaning:
-            "Panorama supports the work but does not carry the full routine alone. It strengthens visibility, coordination, or evidence, alongside other tools/processes.",
+            "Panorama supports the work but doesn’t carry the full routine alone. It strengthens visibility, coordination, or evidence.",
           lookFor:
-            "Panorama adds context, flags needs, or provides evidence that supports decisions made elsewhere.",
+            "Panorama adds context/flags needs or provides evidence to support decisions.",
         },
         {
           label: "⚪ Limited Alignment",
           meaning:
-            "This practice is primarily enacted through other systems or routines. Panorama may provide helpful context but is not central to implementation.",
+            "This practice is primarily enacted through other systems or routines. Panorama may provide helpful context, but isn’t central.",
           lookFor:
-            "Use Panorama for reference, but do not expect full practice execution in-platform.",
+            "Use Panorama for reference, not for full practice execution.",
         },
       ];
 
@@ -117,6 +116,7 @@
           alignment: {
             badge: "🟢",
             type: "Primary Leverage",
+            leverageLabel: "Panorama Leverage Level",
             anchor:
               "This Power Practice focuses on the consistent use of multiple data sources to identify student needs early and guide timely, informed responses.",
             provenance:
@@ -126,7 +126,6 @@
               "Effective response requires coordinated follow-through across roles and teams.",
               "Student Success provides consistent visibility into trends and student-level context.",
             ],
-            leverageLabel: "Panorama Leverage Level",
           },
           narrative: {
             lead:
@@ -260,6 +259,7 @@
           alignment: {
             badge: "🟢",
             type: "Primary Leverage",
+            leverageLabel: "Panorama Leverage Level",
             anchor:
               "This Power Practice emphasizes providing timely, tiered supports based on student need, with clear documentation and regular progress monitoring to inform decisions.",
             provenance:
@@ -269,7 +269,6 @@
               "Progress monitoring is essential to determine whether supports are effective and should be adjusted.",
               "Student Success functions as a system of record for plans, updates, and monitoring.",
             ],
-            leverageLabel: "Panorama Leverage Level",
           },
           narrative: {
             lead: "Tiered supports work best when they are consistent, documented, and monitored over time.",
@@ -388,28 +387,38 @@
         },
       };
 
-      // Defaults: start at TOC
       const DEFAULT_PRACTICE = "data-informed";
       const DEFAULT_ROLE = "teacher";
-      const DEFAULT_TAB = "toc";
       const VALID_TABS = ["toc", "practice", "alignment", "roadmap", "check-fors", "learn"];
+      const DEFAULT_TAB = "toc";
 
-      function getParams() {
+      function safeTab(tab) {
+        return VALID_TABS.includes(tab) ? tab : DEFAULT_TAB;
+      }
+
+      function safePractice(id) {
+        return PRACTICES[id] ? id : DEFAULT_PRACTICE;
+      }
+
+      function safeRole(id) {
+        return BASE_ROLES[id] ? id : DEFAULT_ROLE;
+      }
+
+      function readParams() {
         const sp = new URLSearchParams(window.location.search);
         return {
-          practice: sp.get("practice") || DEFAULT_PRACTICE,
-          role: sp.get("role") || DEFAULT_ROLE,
-          tab: sp.get("tab") || DEFAULT_TAB,
+          practice: safePractice(sp.get("practice")),
+          role: safeRole(sp.get("role")),
+          tab: safeTab(sp.get("tab")),
         };
       }
 
-      function setParams({ practice, role, tab }) {
+      function writeParams({ practice, role, tab }) {
         const sp = new URLSearchParams(window.location.search);
-        sp.set("practice", practice);
-        sp.set("role", role);
-        sp.set("tab", tab);
-        const newUrl = `${window.location.pathname}?${sp.toString()}`;
-        window.history.replaceState({}, "", newUrl);
+        sp.set("practice", safePractice(practice));
+        sp.set("role", safeRole(role));
+        sp.set("tab", safeTab(tab));
+        window.history.replaceState({}, "", `${window.location.pathname}?${sp.toString()}`);
       }
 
       function Modal({ title, children, onClose }) {
@@ -443,4 +452,141 @@
               className="text-[10px] font-black px-3 py-1 rounded-full bg-white border border-slate-200 text-slate-700 uppercase tracking-widest hover:bg-slate-50 transition inline-flex items-center gap-2"
               title="What does this mean?"
             >
-              <Icon name="help-circle" class
+              <Icon name="help-circle" className="w-3 h-3" />
+              What does this mean?
+            </button>
+          </div>
+        );
+      }
+
+      function ContextStrip({ practiceTitle, roleTitle, alignment, onKey }) {
+        return (
+          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3">
+            <div className="text-sm text-slate-700 font-semibold">
+              <span className="text-slate-500 font-black uppercase tracking-widest text-[10px] block">You are viewing</span>
+              <span className="font-black text-slate-800">{practiceTitle}</span>
+              <span className="text-slate-400"> • </span>
+              <span className="text-indigo-700 font-black">{roleTitle}</span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-black px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 uppercase tracking-widest">
+                {alignment.leverageLabel}: {alignment.badge} {alignment.type}
+              </span>
+              <button
+                onClick={onKey}
+                className="text-[10px] font-black px-3 py-1 rounded-full bg-white border border-slate-200 text-slate-700 uppercase tracking-widest hover:bg-slate-50 transition"
+              >
+                Alignment Key
+              </button>
+            </div>
+          </div>
+        );
+      }
+
+      function App() {
+        const initial = useMemo(() => readParams(), []);
+        const [selectedPractice, setSelectedPractice] = useState(initial.practice);
+        const [selectedRole, setSelectedRole] = useState(initial.role);
+        const [activeTab, setActiveTab] = useState(initial.tab);
+        const [showKey, setShowKey] = useState(false);
+
+        // HARD GUARD: if anything slips, snap back to safe values
+        useEffect(() => {
+          const safeP = safePractice(selectedPractice);
+          const safeR = safeRole(selectedRole);
+          const safeT = safeTab(activeTab);
+          if (safeP !== selectedPractice) setSelectedPractice(safeP);
+          if (safeR !== selectedRole) setSelectedRole(safeR);
+          if (safeT !== activeTab) setActiveTab(safeT);
+        }, [selectedPractice, selectedRole, activeTab]);
+
+        const practice = useMemo(() => PRACTICES[selectedPractice], [selectedPractice]);
+        const roleBase = useMemo(() => BASE_ROLES[selectedRole], [selectedRole]);
+        const roleData = useMemo(() => practice.roles[selectedRole], [practice, selectedRole]);
+        const practiceCards = Object.values(PRACTICES);
+
+        useEffect(() => {
+          writeParams({ practice: selectedPractice, role: selectedRole, tab: activeTab });
+        }, [selectedPractice, selectedRole, activeTab]);
+
+        useEffect(() => {
+          if (window.lucide && typeof window.lucide.createIcons === "function") window.lucide.createIcons();
+        }, [selectedPractice, selectedRole, activeTab, showKey]);
+
+        const tabs = [
+          { id: "toc", label: "All Practices", icon: "layout-grid" },
+          { id: "practice", label: "Power Practice", icon: "book-open" },
+          { id: "alignment", label: "Panorama Alignment", icon: "link" },
+          { id: "roadmap", label: "Role Expectations", icon: "clipboard-list" },
+          { id: "check-fors", label: "Leader Look-Fors", icon: "eye" },
+          { id: "learn", label: "Learn & Do", icon: "graduation-cap" },
+        ];
+
+        const commonPitfalls = [
+          "Relying on a single data point",
+          "Data review without next steps",
+          "Using parallel spreadsheets outside of Panorama",
+        ];
+
+        return (
+          <div className="min-h-screen bg-slate-50 text-slate-800 font-sans selection:bg-indigo-100 selection:text-indigo-900">
+            {/* Top Banner */}
+            <nav className="bg-[#003366] text-white p-4 shadow-lg sticky top-0 z-50">
+              <div className="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-4">
+                <div className="flex items-center gap-3 min-w-[220px]">
+                  <div className="bg-white p-1 rounded shadow-sm">
+                    <img
+                      src="https://upload.wikimedia.org/wikipedia/commons/4/4b/Seal_of_the_District_of_Columbia.svg"
+                      className="w-8 h-8"
+                      alt="DC Seal"
+                    />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-tighter leading-none opacity-90">District of Columbia</p>
+                    <p className="text-lg font-black tracking-tight leading-none">Public Schools</p>
+                  </div>
+                </div>
+
+                <div className="hidden lg:block text-right flex-1">
+                  <h1 className="text-xl font-bold tracking-tight uppercase">{practice.headerKicker}</h1>
+                  <p className="text-[10px] opacity-80 uppercase tracking-[0.2em] font-medium">{practice.headerTitle}</p>
+                </div>
+
+                {/* NEW: Practice selector in top header */}
+                <div className="flex items-center gap-2">
+                  <div className="hidden sm:block">
+                    <p className="text-[10px] font-black uppercase tracking-widest opacity-70">Select Practice</p>
+                    <select
+                      value={selectedPractice}
+                      onChange={(e) => {
+                        setSelectedPractice(safePractice(e.target.value));
+                        setActiveTab("practice");
+                      }}
+                      className="mt-1 bg-white/10 text-white border border-white/20 rounded-xl px-3 py-2 text-xs font-black uppercase tracking-widest focus:outline-none"
+                    >
+                      {practiceCards.map((p) => (
+                        <option key={p.id} value={p.id} className="text-slate-900">
+                          {p.headerTitle}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <button
+                    onClick={() => setShowKey(true)}
+                    className="text-[10px] font-black px-3 py-2 rounded-xl bg-white/10 border border-white/20 uppercase tracking-widest hover:bg-white/15 transition flex items-center gap-2"
+                    title="Panorama Leverage Level key"
+                  >
+                    <Icon name="info" className="w-4 h-4" />
+                    Alignment Key
+                  </button>
+                </div>
+              </div>
+            </nav>
+
+            <main className="max-w-7xl mx-auto p-4 md:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+              {/* Sidebar */}
+              <aside className="lg:col-span-3 space-y-4">
+                {/* Practice Selector (sidebar) */}
+                <div className="bg-white rounded-2
