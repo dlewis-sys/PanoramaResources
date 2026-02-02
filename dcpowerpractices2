@@ -1,0 +1,869 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DCPS Power Practices Hub</title>
+
+    <!-- Tailwind (CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- React (UMD) -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+
+    <!-- Babel (compile JSX in browser) -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Lucide (CDN, NOT lucide-react) -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+      /* Simple animations to replace tailwindcss-animate classes */
+      .animate-in {
+        animation: fadeSlideIn 0.5s ease-out both;
+      }
+      .fade-in {
+        /* included for parity */
+      }
+      .slide-in-from-bottom-4 {
+        /* included for parity */
+      }
+      @keyframes fadeSlideIn {
+        from {
+          opacity: 0;
+          transform: translateY(16px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+    </style>
+  </head>
+
+  <body class="pb-6">
+    <div id="root"></div>
+
+    <script type="text/babel">
+      const { useEffect, useMemo, useState } = React;
+
+      // Small helper to render Lucide icons via <i data-lucide="...">
+      function Icon({ name, className = "" }) {
+        return <i data-lucide={name} className={className} aria-hidden="true"></i>;
+      }
+
+      // Panorama Academy links (from your Academy spreadsheet)
+      const ACADEMY_LINKS = {
+        studentsOverview:
+          "https://academy.panoramaed.com/hc/en-us/articles/10713910312724-Students-Overview-in-Student-Success",
+        studentProfile:
+          "https://academy.panoramaed.com/hc/en-us/articles/42356556651796-Student-Profile-Page-in-Student-Success",
+        districtSchoolOverview:
+          "https://academy.panoramaed.com/hc/en-us/articles/10713910753172-District-and-School-Overview-in-Student-Success",
+        creatingCustomReports:
+          "https://academy.panoramaed.com/hc/en-us/articles/10713957751700-Creating-Custom-Reports",
+        studentGroups:
+          "https://academy.panoramaed.com/hc/en-us/articles/10713910398612-How-to-Create-Student-Groups",
+        interventionsDashboard:
+          "https://academy.panoramaed.com/hc/en-us/articles/15577476217236-Interventions-Dashboard-Overview",
+        interventionsDashboardUseCases:
+          "https://academy.panoramaed.com/hc/en-us/articles/16528578220820-Use-Cases-for-Interventions-Dashboard",
+        progressMonitoring:
+          "https://academy.panoramaed.com/hc/en-us/articles/10713910722708-Progress-Monitoring-for-Interventions",
+        checkInsGettingStarted:
+          "https://academy.panoramaed.com/hc/en-us/articles/29022080818836-Getting-Started-Guide-Navigating-Check-Ins",
+        checkInsUseCases:
+          "https://academy.panoramaed.com/hc/en-us/articles/15328335007636-Check-ins-Use-Cases",
+        playbookGettingStarted:
+          "https://academy.panoramaed.com/hc/en-us/articles/29023134996756-Getting-Started-Guide-Navigating-Panorama-s-Playbook",
+      };
+
+      // Alignment + provenance (mirrors the revised logic)
+      const ALIGNMENT = {
+        badge: "🟢",
+        type: "Primary Leverage",
+        anchor:
+          "This Power Practice focuses on the consistent use of multiple data sources to identify student needs early and guide timely, informed responses.",
+        provenance:
+          "Source: DCPS Power Practices Framework – see relevant MTSS and Data-Informed Decision-Making strands for full description.",
+        why: [
+          "This practice depends on unified, whole-child data views to identify need early.",
+          "Effective response requires coordinated follow-through across roles and teams.",
+          "Student Success provides consistent visibility into trends and student-level context.",
+        ],
+      };
+
+      const ROLES = {
+        teacher: {
+          id: "teacher",
+          title: "Teachers",
+          icon: "user-circle",
+          color: "blue",
+          focus: "Student-Level Responsiveness",
+          features: ["Students Overview", "Student Profiles"],
+          responsibilities: [
+            "Regularly review Students Overview to identify At Risk/Critical students",
+            "Use Student Profiles to inform differentiation and classroom supports",
+            "Bring data-informed observations into grade-level or MTSS discussions",
+          ],
+          resource: {
+            label: "Teacher Use: Students Overview",
+            url: ACADEMY_LINKS.studentsOverview,
+          },
+        },
+        mtss: {
+          id: "mtss",
+          title: "MTSS Teams",
+          icon: "layers",
+          color: "indigo",
+          focus: "Shared Review & Follow-Through",
+          features: ["Students Overview", "Reports & Custom Reports"],
+          responsibilities: [
+            "Use shared data views to prepare for MTSS meetings",
+            "Identify patterns across students and confirm follow-up actions",
+            "Monitor identified at-risk students for support appropriate-ness",
+          ],
+          resource: {
+            label: "MTSS: Interventions Dashboard Use Cases",
+            url: ACADEMY_LINKS.interventionsDashboardUseCases,
+          },
+        },
+        leader: {
+          id: "leader",
+          title: "School Leaders",
+          icon: "building-2",
+          color: "emerald",
+          focus: "Tier 1 Trends & Systems",
+          features: ["School Overview", "Reports & Custom Reports"],
+          responsibilities: [
+            "Review schoolwide trends to inform instructional priorities",
+            "Use reports for goal monitoring and staff data conversations",
+            "Reinforce consistent use of shared data sources across teams",
+          ],
+          resource: {
+            label: "Leader: District & School Overview",
+            url: ACADEMY_LINKS.districtSchoolOverview,
+          },
+        },
+        district: {
+          id: "district",
+          title: "District Leaders",
+          icon: "bar-chart-3",
+          color: "purple",
+          focus: "System-Level Allocation",
+          features: ["District Overview", "Reports & Custom Reports"],
+          responsibilities: [
+            "Monitor districtwide trends and variation across schools",
+            "Use data to guide system-level planning and resource allocation",
+          ],
+          resource: {
+            label: "Creating Custom Reports",
+            url: ACADEMY_LINKS.creatingCustomReports,
+          },
+        },
+      };
+
+      const PANORAMA_FEATURES = {
+        primary: [
+          {
+            name: "Students Overview",
+            desc: "Holistic, early-warning view of risk across academics, attendance, behavior, and SEL.",
+            use: "Proactive identification and prioritization of student needs.",
+            link: "Feature Walkthrough",
+            url: ACADEMY_LINKS.studentsOverview,
+          },
+          {
+            name: "School Overview",
+            desc: "Schoolwide and grade-level trends that inform Tier 1 instructional planning.",
+            use: "Guiding system-level supports and high-level instructional adjustments.",
+            link: "Overview Pages",
+            url: ACADEMY_LINKS.districtSchoolOverview,
+          },
+          {
+            name: "Reports & Custom Reports",
+            desc: "Enables monitoring of progress toward goals and analysis of patterns across groups.",
+            use: "Combining multiple indicators into meaningful, actionable insights.",
+            link: "Creating Custom Reports",
+            url: ACADEMY_LINKS.creatingCustomReports,
+          },
+        ],
+        supporting: [
+          {
+            name: "Student Profiles",
+            desc: "Longitudinal, student-level context for problem-solving.",
+            use: "Individualized instructional planning and student context.",
+            link: "Student Profile Overview",
+            url: ACADEMY_LINKS.studentProfile,
+          },
+          {
+            name: "Student Groups (Smart/Static)",
+            desc: "Dynamic grouping based on evolving data (e.g., academic risk + attendance).",
+            use: "Ongoing monitoring and focused cohort follow-up.",
+            link: "How to Create Student Groups",
+            url: ACADEMY_LINKS.studentGroups,
+          },
+        ],
+      };
+
+      // Learn & Do resources (organized for the new tab)
+      const LEARN_DO = {
+        core: [
+          { label: "Students Overview in Student Success", url: ACADEMY_LINKS.studentsOverview },
+          { label: "District and School Overview in Student Success", url: ACADEMY_LINKS.districtSchoolOverview },
+          { label: "Creating Custom Reports", url: ACADEMY_LINKS.creatingCustomReports },
+        ],
+        roleQuickLinks: [
+          {
+            role: "Teachers",
+            label: "Student Profile Page in Student Success",
+            url: ACADEMY_LINKS.studentProfile,
+          },
+          {
+            role: "MTSS Teams / Coordinators",
+            label: "How to Create Student Groups",
+            url: ACADEMY_LINKS.studentGroups,
+          },
+          {
+            role: "Student Voice (Check-Ins)",
+            label: "Getting Started Guide: Navigating Check-Ins",
+            url: ACADEMY_LINKS.checkInsGettingStarted,
+            secondaryLabel: "Check-Ins Use Cases →",
+            secondaryUrl: ACADEMY_LINKS.checkInsUseCases,
+          },
+        ],
+        nextLevel: [
+          {
+            title: "Interventions Dashboard Overview",
+            desc: "Great for teams monitoring follow-through.",
+            url: ACADEMY_LINKS.interventionsDashboard,
+          },
+          {
+            title: "Interventions Dashboard Use Cases",
+            desc: "Examples of how teams use dashboards.",
+            url: ACADEMY_LINKS.interventionsDashboardUseCases,
+          },
+          {
+            title: "Getting Started with Playbook",
+            desc: "Strategy support aligned to student needs.",
+            url: ACADEMY_LINKS.playbookGettingStarted,
+          },
+        ],
+      };
+
+      function App() {
+        const [selectedRole, setSelectedRole] = useState("teacher");
+        const [activeTab, setActiveTab] = useState("overview");
+
+        const roleData = useMemo(() => ROLES[selectedRole], [selectedRole]);
+
+        // Re-create Lucide SVGs after every render that might add/change icons
+        useEffect(() => {
+          if (window.lucide && typeof window.lucide.createIcons === "function") {
+            window.lucide.createIcons();
+          }
+        }, [selectedRole, activeTab]);
+
+        const tabs = [
+          { id: "overview", label: "Why it Matters", icon: "info" },
+          { id: "toolkit", label: "Panorama Toolkit", icon: "search" },
+          { id: "roadmap", label: "Role Expectations", icon: "clipboard-list" },
+          { id: "check-fors", label: "Leader Look-Fors", icon: "eye" },
+          { id: "learn", label: "Learn & Do", icon: "graduation-cap" },
+        ];
+
+        const lookFors = [
+          "Regular review of Students and School Overviews",
+          "Reports combining multiple indicators (e.g., Academics + SEL)",
+          "Data referenced consistently during MTSS/Grade-Level meetings",
+          "Reduced reliance on informal or manual tracking systems",
+          "Action steps clearly defined after every data review cycle",
+        ];
+
+        const reflectionQs = [
+          "Which Student Success features are we using consistently?",
+          "Where do we need stronger routines for reviewing data?",
+          "What additional support would help teams use data effectively?",
+        ];
+
+        return (
+          <div className="min-h-screen bg-slate-50 text-slate-800 font-sans selection:bg-indigo-100 selection:text-indigo-900">
+            {/* Top Banner Branding */}
+            <nav className="bg-[#003366] text-white p-4 shadow-lg sticky top-0 z-50">
+              <div className="max-w-7xl mx-auto flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                  <div className="bg-white p-1 rounded shadow-sm">
+                    <img
+                      src="https://upload.wikimedia.org/wikipedia/commons/4/4b/Seal_of_the_District_of_Columbia.svg"
+                      className="w-8 h-8"
+                      alt="DC Seal"
+                    />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-tighter leading-none opacity-90">
+                      District of Columbia
+                    </p>
+                    <p className="text-lg font-black tracking-tight leading-none">Public Schools</p>
+                  </div>
+                </div>
+
+                <div className="hidden lg:block text-right">
+                  <h1 className="text-xl font-bold tracking-tight uppercase">Power Practices</h1>
+                  <p className="text-[10px] opacity-80 uppercase tracking-[0.2em] font-medium">
+                    Data-Informed Instruction & Intervention
+                  </p>
+                </div>
+              </div>
+            </nav>
+
+            <main className="max-w-7xl mx-auto p-4 md:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+              {/* Sidebar Role Switcher */}
+              <aside className="lg:col-span-3 space-y-4">
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                  <div className="p-4 bg-slate-50 border-b border-slate-200">
+                    <h2 className="text-xs font-bold uppercase text-slate-500 tracking-wider flex items-center gap-2">
+                      <Icon name="user-circle" className="w-3 h-3" /> Select Role Perspective
+                    </h2>
+                  </div>
+                  <div className="p-2 space-y-1">
+                    {Object.values(ROLES).map((r) => (
+                      <button
+                        key={r.id}
+                        onClick={() => {
+                          setSelectedRole(r.id);
+                          setActiveTab("roadmap");
+                        }}
+                        className={`w-full text-left flex items-center gap-3 p-3 rounded-xl transition-all duration-200 ${
+                          selectedRole === r.id
+                            ? "bg-indigo-50 border-l-4 border-indigo-600 shadow-sm"
+                            : "hover:bg-slate-50 border-l-4 border-transparent text-slate-500"
+                        }`}
+                      >
+                        <Icon
+                          name={r.icon}
+                          className={`w-5 h-5 ${
+                            selectedRole === r.id ? "text-indigo-600" : "text-slate-400"
+                          }`}
+                        />
+                        <span className={`text-sm font-bold ${selectedRole === r.id ? "text-indigo-900" : ""}`}>
+                          {r.title}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="bg-amber-50 p-6 rounded-2xl border border-amber-200 shadow-sm">
+                  <h3 className="text-xs font-black uppercase mb-4 text-amber-700 tracking-widest flex items-center gap-2">
+                    <Icon name="alert-triangle" className="w-4 h-4" /> Common Pitfalls
+                  </h3>
+                  <ul className="space-y-3 text-xs text-amber-900 font-medium leading-relaxed">
+                    <li>• Relying on a single data point</li>
+                    <li>• Data review without next steps</li>
+                    <li>• Using parallel spreadsheets outside of Panorama</li>
+                  </ul>
+                </div>
+              </aside>
+
+              {/* Content Area */}
+              <section className="lg:col-span-9 space-y-6">
+                {/* Dashboard Navigation */}
+                <nav className="flex flex-wrap gap-1 bg-white p-1 rounded-2xl shadow-sm border border-slate-200">
+                  {tabs.map((tab) => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 text-xs font-black transition-all rounded-xl uppercase tracking-widest ${
+                        activeTab === tab.id ? "bg-indigo-600 text-white shadow-lg" : "text-slate-500 hover:bg-slate-50"
+                      }`}
+                    >
+                      <Icon name={tab.icon} className="w-4 h-4" />
+                      {tab.label}
+                    </button>
+                  ))}
+                </nav>
+
+                <div className="bg-white rounded-[2rem] shadow-sm border border-slate-200 p-6 md:p-10 min-h-[600px] transition-all duration-500">
+                  {/* OVERVIEW */}
+                  {activeTab === "overview" && (
+                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-3xl">
+                      <header className="mb-10">
+                        <h2 className="text-3xl font-black text-slate-800 tracking-tight mb-4">Power Practice Overview</h2>
+                        <div className="h-1 w-20 bg-indigo-600 rounded-full"></div>
+                      </header>
+
+                      <div className="space-y-6 text-slate-600 leading-relaxed">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-black px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 uppercase tracking-widest">
+                            {ALIGNMENT.badge} {ALIGNMENT.type}
+                          </span>
+                          <span className="text-xs font-black px-3 py-1 rounded-full bg-slate-100 text-slate-700 uppercase tracking-widest">
+                            Example Page
+                          </span>
+                        </div>
+
+                        <p className="text-lg font-medium text-slate-800">
+                          Data-informed instruction ensures supports are responsive to student need rather than isolated observations.
+                        </p>
+
+                        <p>
+                          When implemented well, this practice strengthens Tier 1 instruction, enables early identification of students needing support,
+                          and creates a shared foundation for MTSS decision-making across classrooms, teams, and schools.
+                        </p>
+
+                        <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200">
+                          <p className="text-xs font-black uppercase tracking-widest text-slate-500 mb-2">Power Practice Anchor</p>
+                          <p className="text-sm font-semibold text-slate-800 leading-relaxed">{ALIGNMENT.anchor}</p>
+                          <p className="text-[11px] text-slate-500 mt-3">
+                            <span className="font-bold">Provenance:</span> {ALIGNMENT.provenance}
+                          </p>
+                        </div>
+
+                        <div className="mt-2 bg-emerald-50 border border-emerald-200 p-5 rounded-2xl">
+                          <p className="text-xs font-black uppercase tracking-widest text-emerald-700 mb-2">Why this alignment</p>
+                          <ul className="text-sm text-emerald-900 font-medium space-y-2">
+                            {ALIGNMENT.why.map((x, i) => (
+                              <li key={i}>• {x}</li>
+                            ))}
+                          </ul>
+                        </div>
+
+                        <div className="bg-indigo-50 border-l-4 border-indigo-500 p-6 rounded-r-2xl italic font-semibold text-indigo-900">
+                          “This practice positions Panorama Student Success as a shared source of truth for understanding student trends across
+                          academics, attendance, behavior, and SEL.”
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
+                          <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                            <h4 className="font-bold text-slate-800 mb-2 flex items-center gap-2">
+                              <Icon name="check-circle-2" className="w-4 h-4 text-emerald-500" />
+                              Evidence-Based Decisions
+                            </h4>
+                            <p className="text-xs">
+                              Instructional and MTSS decisions are grounded in shared evidence rather than anecdotes.
+                            </p>
+                          </div>
+
+                          <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                            <h4 className="font-bold text-slate-800 mb-2 flex items-center gap-2">
+                              <Icon name="check-circle-2" className="w-4 h-4 text-emerald-500" />
+                              Longitudinal View
+                            </h4>
+                            <p className="text-xs">
+                              Conversations focus on trends and patterns over time rather than single data snapshots.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* TOOLKIT */}
+                  {activeTab === "toolkit" && (
+                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+                        <div>
+                          <h3 className="text-2xl font-black text-slate-800">How Panorama Supports This Practice</h3>
+                          <p className="text-slate-500 mt-2 text-sm">
+                            Highlights indicate priority features for:{" "}
+                            <strong className="text-indigo-600">{roleData.title}</strong>
+                          </p>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-black px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 uppercase tracking-widest">
+                            {ALIGNMENT.badge} {ALIGNMENT.type}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="space-y-8">
+                        <div>
+                          <h4 className="text-xs font-black text-indigo-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+                            <Icon name="external-link" className="w-3 h-3" />
+                            Primary Leverage Features (Student Success)
+                          </h4>
+
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            {PANORAMA_FEATURES.primary.map((f) => {
+                              const isFocus = roleData.features.includes(f.name);
+                              return (
+                                <div
+                                  key={f.name}
+                                  className={`p-6 bg-white border-2 rounded-3xl shadow-sm transition-all flex flex-col h-full relative ${
+                                    isFocus
+                                      ? "border-indigo-500 ring-4 ring-indigo-50 shadow-xl scale-[1.02]"
+                                      : "border-slate-50 hover:border-indigo-200"
+                                  }`}
+                                >
+                                  {isFocus && (
+                                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-indigo-600 text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-sm whitespace-nowrap z-10">
+                                      {roleData.title} Focus
+                                    </div>
+                                  )}
+
+                                  <h5
+                                    className={`font-black text-lg mb-2 leading-tight ${
+                                      isFocus ? "text-indigo-900" : "text-slate-800"
+                                    }`}
+                                  >
+                                    {f.name}
+                                  </h5>
+
+                                  <p className="text-xs text-slate-500 mb-4 flex-grow leading-relaxed">{f.desc}</p>
+
+                                  <div
+                                    className={`p-3 rounded-xl mb-4 text-[10px] font-bold ${
+                                      isFocus ? "bg-indigo-50 text-indigo-700" : "bg-slate-50 text-slate-700"
+                                    }`}
+                                  >
+                                    Impact: {f.use}
+                                  </div>
+
+                                  <a
+                                    href={f.url}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="text-indigo-600 text-[10px] font-black uppercase flex items-center gap-1 hover:underline mt-auto"
+                                  >
+                                    Resource: {f.link} <Icon name="arrow-right" className="w-3 h-3" />
+                                  </a>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        <div className="pt-6 border-t border-slate-100">
+                          <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">
+                            Supporting Features (as needed)
+                          </h4>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {PANORAMA_FEATURES.supporting.map((f) => {
+                              const isFocus = roleData.features.includes(f.name);
+                              return (
+                                <div
+                                  key={f.name}
+                                  className={`p-5 rounded-2xl flex items-start gap-4 border ${
+                                    isFocus
+                                      ? "bg-indigo-50/50 border-indigo-200 ring-2 ring-indigo-50"
+                                      : "bg-slate-50 border-slate-100"
+                                  }`}
+                                >
+                                  <div
+                                    className={`p-2 rounded-xl border ${
+                                      isFocus ? "bg-indigo-100 border-indigo-200" : "bg-white border-slate-200"
+                                    }`}
+                                  >
+                                    <Icon
+                                      name="layers"
+                                      className={`w-4 h-4 ${isFocus ? "text-indigo-600" : "text-slate-400"}`}
+                                    />
+                                  </div>
+
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <h5 className={`font-bold text-sm ${isFocus ? "text-indigo-900" : "text-slate-800"}`}>
+                                        {f.name}
+                                      </h5>
+                                      {isFocus && (
+                                        <span className="text-[9px] font-black text-indigo-600 bg-indigo-100 px-1.5 py-0.5 rounded uppercase tracking-wider">
+                                          Focus
+                                        </span>
+                                      )}
+                                    </div>
+                                    <p className="text-xs text-slate-500 leading-relaxed">{f.desc}</p>
+
+                                    <div className="mt-3">
+                                      <a
+                                        href={f.url}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="text-indigo-600 text-[10px] font-black uppercase inline-flex items-center gap-1 hover:underline"
+                                      >
+                                        Resource: {f.link} <Icon name="arrow-right" className="w-3 h-3" />
+                                      </a>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ROLE EXPECTATIONS */}
+                  {activeTab === "roadmap" && (
+                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                      <header className="flex flex-wrap items-center justify-between gap-4 mb-10">
+                        <div className="flex items-center gap-6">
+                          <div className="p-5 bg-indigo-600 rounded-3xl text-white shadow-xl shadow-indigo-100 rotate-3">
+                            <Icon name={roleData.icon} className="w-10 h-10" />
+                          </div>
+
+                          <div>
+                            <h2 className="text-3xl font-black text-slate-800 tracking-tight">{roleData.title} Expectations</h2>
+                            <p className="text-slate-500 flex items-center gap-2 mt-1">
+                              Platform Emphasis:{" "}
+                              <span className="font-bold text-indigo-600 uppercase text-xs tracking-wider">
+                                {roleData.focus}
+                              </span>
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-black px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 uppercase tracking-widest">
+                            {ALIGNMENT.badge} {ALIGNMENT.type}
+                          </span>
+                        </div>
+                      </header>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                        <div className="bg-slate-50 p-8 rounded-3xl border border-slate-100 shadow-inner">
+                          <h3 className="font-black text-slate-900 mb-6 flex items-center gap-2 text-sm uppercase tracking-widest">
+                            <Icon name="target" className="w-4 h-4 text-indigo-500" />
+                            What You Are Expected To Do
+                          </h3>
+
+                          <ul className="space-y-4">
+                            {roleData.responsibilities.map((item, i) => (
+                              <li
+                                key={i}
+                                className="flex gap-4 text-sm text-slate-600 leading-relaxed font-medium"
+                              >
+                                <Icon
+                                  name="check-circle-2"
+                                  className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5"
+                                />
+                                {item}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+
+                        <div className="bg-indigo-50/50 p-8 rounded-3xl border border-indigo-100 flex flex-col">
+                          <h3 className="font-black text-indigo-900 mb-6 flex items-center gap-2 text-sm uppercase tracking-widest">
+                            <Icon name="search" className="w-4 h-4 text-indigo-600" />
+                            Primary Toolkit Focus
+                          </h3>
+
+                          <div className="space-y-3 flex-grow">
+                            {roleData.features.map((f) => (
+                              <div
+                                key={f}
+                                className="p-4 bg-white rounded-2xl shadow-sm border border-indigo-200 font-bold text-indigo-900 text-sm flex justify-between items-center group cursor-default hover:border-indigo-400 transition-colors"
+                              >
+                                {f}
+                                <div className="w-2 h-2 rounded-full bg-indigo-500 group-hover:scale-125 transition-transform"></div>
+                              </div>
+                            ))}
+                          </div>
+
+                          <div className="mt-8">
+                            <p className="text-[10px] uppercase font-black text-indigo-400 mb-2">Access Resource</p>
+                            <a
+                              href={roleData.resource.url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="w-full bg-indigo-600 text-white p-3 rounded-xl font-black text-xs uppercase flex items-center justify-center gap-2 hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-100"
+                            >
+                              {roleData.resource.label}
+                              <Icon name="arrow-right" className="w-4 h-4" />
+                            </a>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* LEADER LOOK-FORS */}
+                  {activeTab === "check-fors" && (
+                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                      <header className="mb-10">
+                        <div className="flex items-center justify-between gap-4 flex-wrap">
+                          <div>
+                            <h3 className="text-2xl font-black text-slate-800 mb-2">Evidence of Implementation</h3>
+                            <p className="text-slate-500 font-medium">What leaders observe when this Power Practice is effective.</p>
+                          </div>
+                          <span className="text-[10px] font-black px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 uppercase tracking-widest">
+                            {ALIGNMENT.badge} {ALIGNMENT.type}
+                          </span>
+                        </div>
+                      </header>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
+                        {lookFors.map((lookfor, i) => (
+                          <div
+                            key={i}
+                            className="p-6 bg-slate-50 rounded-3xl border border-slate-100 flex gap-4 items-center"
+                          >
+                            <div className="w-10 h-10 bg-emerald-500 rounded-2xl flex items-center justify-center text-white flex-shrink-0 shadow-lg shadow-emerald-100">
+                              <Icon name="check-circle-2" className="w-5 h-5" />
+                            </div>
+                            <p className="text-sm font-bold text-slate-700 leading-tight">{lookfor}</p>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="bg-[#003366] p-10 rounded-[2.5rem] text-white shadow-2xl relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full -mt-20 -mr-20"></div>
+
+                        <h4 className="font-black text-lg uppercase tracking-[0.2em] mb-6 flex items-center gap-3">
+                          <Icon name="message-square" className="text-amber-400 w-6 h-6" />
+                          Reflection Questions
+                        </h4>
+
+                        <div className="space-y-6 relative z-10">
+                          {reflectionQs.map((q, idx) => (
+                            <div
+                              key={idx}
+                              className="flex gap-4 items-start bg-white/10 p-4 rounded-2xl backdrop-blur-sm border border-white/10"
+                            >
+                              <div className="font-mono text-indigo-300 font-black">0{idx + 1}</div>
+                              <p className="text-sm font-medium leading-relaxed">{q}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* LEARN & DO */}
+                  {activeTab === "learn" && (
+                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                      <header className="mb-10">
+                        <div className="flex items-center justify-between gap-4 flex-wrap">
+                          <div>
+                            <h3 className="text-2xl font-black text-slate-800 mb-2">Learn & Do</h3>
+                            <p className="text-slate-500 font-medium">
+                              Quick links to Panorama Academy resources aligned to this Power Practice.
+                            </p>
+                          </div>
+                          <span className="text-[10px] font-black px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 uppercase tracking-widest">
+                            {ALIGNMENT.badge} {ALIGNMENT.type}
+                          </span>
+                        </div>
+                      </header>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Core Feature Learning */}
+                        <div className="bg-slate-50 p-6 rounded-3xl border border-slate-200">
+                          <h4 className="text-xs font-black uppercase tracking-widest text-slate-500 mb-4 flex items-center gap-2">
+                            <Icon name="sparkles" className="w-4 h-4" />
+                            Core Features (Start Here)
+                          </h4>
+
+                          <ul className="space-y-3 text-sm font-semibold">
+                            {LEARN_DO.core.map((r, i) => (
+                              <li key={i}>
+                                <a className="text-indigo-700 hover:underline" href={r.url} target="_blank" rel="noreferrer">
+                                  {r.label}
+                                </a>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+
+                        {/* Role-Specific Learning */}
+                        <div className="bg-indigo-50/50 p-6 rounded-3xl border border-indigo-200">
+                          <h4 className="text-xs font-black uppercase tracking-widest text-indigo-700 mb-4 flex items-center gap-2">
+                            <Icon name="users" className="w-4 h-4" />
+                            Role-Based Quick Links
+                          </h4>
+
+                          <div className="space-y-4">
+                            {LEARN_DO.roleQuickLinks.map((r, i) => (
+                              <div key={i} className="bg-white p-4 rounded-2xl border border-indigo-100">
+                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
+                                  {r.role}
+                                </p>
+                                <a
+                                  className="text-indigo-700 font-bold hover:underline text-sm"
+                                  href={r.url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                >
+                                  {r.label}
+                                </a>
+
+                                {r.secondaryUrl && (
+                                  <div className="mt-2">
+                                    <a
+                                      className="text-indigo-600 hover:underline text-xs font-semibold"
+                                      href={r.secondaryUrl}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                    >
+                                      {r.secondaryLabel}
+                                    </a>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Optional: Next Level */}
+                        <div className="bg-white p-6 rounded-3xl border border-slate-200 md:col-span-2">
+                          <h4 className="text-xs font-black uppercase tracking-widest text-slate-500 mb-4 flex items-center gap-2">
+                            <Icon name="rocket" className="w-4 h-4" />
+                            Optional Next-Level Resources
+                          </h4>
+
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            {LEARN_DO.nextLevel.map((r, i) => (
+                              <a
+                                key={i}
+                                className="p-4 rounded-2xl border border-slate-200 hover:border-indigo-300 transition-colors"
+                                href={r.url}
+                                target="_blank"
+                                rel="noreferrer"
+                              >
+                                <p className="text-sm font-black text-slate-800">{r.title}</p>
+                                <p className="text-xs text-slate-500 mt-1">{r.desc}</p>
+                              </a>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </section>
+            </main>
+
+            {/* Footer */}
+            <footer className="max-w-7xl mx-auto p-12 mt-12 border-t border-slate-200">
+              <div className="flex flex-col md:flex-row justify-between items-center gap-8">
+                <div className="flex items-center gap-4 opacity-40">
+                  <img
+                    src="https://upload.wikimedia.org/wikipedia/commons/4/4b/Seal_of_the_District_of_Columbia.svg"
+                    className="w-10 h-10 grayscale"
+                    alt="DC Seal"
+                  />
+                  <div className="text-xs font-bold leading-tight uppercase tracking-widest">
+                    District of Columbia
+                    <br />
+                    Public Schools
+                  </div>
+                </div>
+                <div className="flex flex-col items-end gap-1 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                  <span>Panorama Student Success Guide</span>
+                  <span>Refined SY 2025-2026</span>
+                </div>
+              </div>
+            </footer>
+          </div>
+        );
+      }
+
+      ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+    </script>
+  </body>
+</html>
+```
