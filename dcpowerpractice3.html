@@ -15,27 +15,41 @@
     <!-- Babel (compile JSX in browser) -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-    <!-- Lucide (CDN, NOT lucide-react) -->
+    <!-- Lucide (CDN) -->
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <style>
+      @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap");
+      body {
+        font-family: "Inter", sans-serif;
+      }
       .animate-in {
-        animation: fadeSlideIn 0.5s ease-out both;
+        animation: fadeSlideIn 0.4s ease-out both;
       }
       @keyframes fadeSlideIn {
         from {
           opacity: 0;
-          transform: translateY(16px);
+          transform: translateY(12px);
         }
         to {
           opacity: 1;
           transform: translateY(0);
         }
       }
+      .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-track {
+        background: #f1f5f9;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 10px;
+      }
     </style>
   </head>
 
-  <body class="pb-6">
+  <body class="bg-slate-50 min-h-screen">
     <div id="root"></div>
 
     <script type="text/babel">
@@ -45,7 +59,6 @@
         return <i data-lucide={name} className={className} aria-hidden="true"></i>;
       }
 
-      // Panorama Academy links (placeholders are OK for mockup; these are real Academy paths)
       const ACADEMY_LINKS = {
         studentsOverview:
           "https://academy.panoramaed.com/hc/en-us/articles/10713910312724-Students-Overview-in-Student-Success",
@@ -77,7 +90,7 @@
 
       const BASE_ROLES = {
         teacher: { id: "teacher", title: "Teachers", icon: "user-circle", focus: "Student-Level Responsiveness" },
-        mtss: { id: "mtss", title: "MTSS Teams", icon: "layers", focus: "Systemic Intervention & Monitoring" },
+        mtss: { id: "mtss", title: "MTSS Teams", icon: "layers", focus: "Systemic Intervention" },
         leader: { id: "leader", title: "School Leaders", icon: "building-2", focus: "Tier 1 Trends & Systems" },
         district: { id: "district", title: "District Leaders", icon: "bar-chart-3", focus: "System-Level Allocation" },
       };
@@ -86,188 +99,256 @@
         {
           label: "🟢 Primary Leverage",
           meaning:
-            "Panorama is a primary system for doing the work. Expect routines and evidence to live in-platform (not in parallel trackers).",
-          lookFor:
-            "Regular use and artifacts in Panorama (groups, plans, monitoring, reports).",
+            "Panorama is central to executing the practice. Expect routines and evidence to live in Student Success (not parallel trackers).",
+          color: "bg-emerald-100 text-emerald-800",
         },
         {
           label: "🟡 Supporting Leverage",
           meaning:
-            "Panorama supports the work but doesn’t carry the full routine alone. It strengthens visibility, coordination, or evidence.",
-          lookFor:
-            "Panorama adds context/flags needs or provides evidence to support decisions.",
+            "Panorama strengthens the practice, but other routines/systems carry major parts of the work. Use Student Success to coordinate and evidence.",
+          color: "bg-amber-100 text-amber-800",
         },
         {
           label: "⚪ Limited Alignment",
           meaning:
-            "This practice is primarily enacted through other systems or routines. Panorama may provide helpful context, but isn’t central.",
-          lookFor:
-            "Use Panorama for reference, not for full practice execution.",
+            "The practice is primarily enacted outside Panorama. Student Success may provide context or a “signal” but doesn’t run the routine.",
+          color: "bg-slate-100 text-slate-800",
         },
       ];
 
+      function Modal({ title, children, onClose }) {
+        return (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose}></div>
+            <div className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden animate-in">
+              <div className="p-5 border-b flex justify-between items-center bg-slate-50">
+                <h3 className="font-black text-xs uppercase tracking-widest text-slate-500">{title}</h3>
+                <button
+                  onClick={onClose}
+                  className="p-2 hover:bg-slate-200 rounded-full transition"
+                  aria-label="Close"
+                >
+                  <Icon name="x" className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="p-8 space-y-6">{children}</div>
+            </div>
+          </div>
+        );
+      }
+
+      function LeveragePill({ badge, type }) {
+        const entry =
+          type === "Primary Leverage"
+            ? LEVERAGE_KEY[0]
+            : type === "Supporting Leverage"
+            ? LEVERAGE_KEY[1]
+            : LEVERAGE_KEY[2];
+        return (
+          <span className={`text-[10px] font-black uppercase px-3 py-1.5 rounded-full ${entry.color} tracking-widest`}>
+            {badge} {type}
+          </span>
+        );
+      }
+
+      // ---- Expanded practice model (this is where your “missing outline” comes back) ----
       const PRACTICES = {
         "data-informed": {
           id: "data-informed",
-          headerKicker: "POWER PRACTICES",
+          headerKicker: "POWER PRACTICE",
           headerTitle: "Data-Informed Instruction & Intervention",
-          statusChip: "Hub Mockup",
-          suggestedStart: "Power Practice",
           alignment: {
             badge: "🟢",
             type: "Primary Leverage",
-            leverageLabel: "Panorama Leverage Level",
-            anchor:
-              "This Power Practice focuses on the consistent use of multiple data sources to identify student needs early and guide timely, informed responses.",
+            anchorActualPractice:
+              "Staff consistently use multiple sources of student data to identify needs early, prioritize supports, and adjust instruction and interventions based on evidence.",
             provenance:
-              "DCPS Power Practices Framework – see relevant MTSS and Data-Informed Decision-Making strands for full description.",
-            why: [
-              "This practice depends on unified, whole-child data views to identify need early.",
-              "Effective response requires coordinated follow-through across roles and teams.",
-              "Student Success provides consistent visibility into trends and student-level context.",
+              "Source: DCPS Power Practices (SY25–26) – Data-Informed Decision-Making / MTSS strands (internal reference).",
+            whyBullets: [
+              "Moves teams from “who’s struggling?” to “what’s the pattern and what’s our plan?”",
+              "Creates a shared source of truth across academics, attendance, behavior, and SEL.",
+              "Reduces dependence on spreadsheets and fragmented tracking systems.",
+            ],
+            routineExamples: [
+              {
+                title: "Weekly/bi-weekly data cycle",
+                desc: "Use Students Overview trends to flag students for follow-up, then confirm next steps and owners.",
+                tool: "Students Overview + Student Groups",
+              },
+              {
+                title: "MTSS meeting prep",
+                desc: "Arrive with Smart Groups and custom reports already built to make meeting time decision-focused.",
+                tool: "Smart Groups + Custom Reports",
+              },
+              {
+                title: "Student check-ins",
+                desc: "Use Student Success check-ins data (and notes) to add context to academic/attendance flags and plan supports.",
+                tool: "Check-Ins + Notes/Plans",
+              },
             ],
           },
           narrative: {
-            lead:
-              "Data-informed instruction ensures supports are responsive to student need rather than isolated observations.",
+            lead: "Data-informed instruction makes support responsive to student need instead of isolated observations.",
             body:
               "When implemented well, this practice strengthens Tier 1 instruction, enables early identification of students needing support, and creates a shared foundation for MTSS decision-making across classrooms, teams, and schools.",
             quote:
-              "Student Success functions as a shared source of truth for understanding student trends across academics, attendance, behavior, and SEL.",
-          },
-          roles: {
-            teacher: {
-              features: ["Students Overview", "Student Profiles"],
-              responsibilities: [
-                "Regularly review Students Overview to identify At Risk/Critical students",
-                "Use Student Profiles to inform differentiation and classroom supports",
-                "Bring data-informed observations into grade-level or MTSS discussions",
-              ],
-              resource: { label: "Students Overview", url: ACADEMY_LINKS.studentsOverview },
-            },
-            mtss: {
-              features: ["Students Overview", "Reports & Custom Reports"],
-              responsibilities: [
-                "Use shared data views to prepare for MTSS meetings",
-                "Identify patterns across students and confirm follow-up actions",
-                "Monitor identified at-risk students for support appropriate-ness",
-              ],
-              resource: { label: "Creating Custom Reports", url: ACADEMY_LINKS.creatingCustomReports },
-            },
-            leader: {
-              features: ["School Overview", "Reports & Custom Reports"],
-              responsibilities: [
-                "Review schoolwide trends to inform instructional priorities",
-                "Use reports for goal monitoring and staff data conversations",
-                "Reinforce consistent use of shared data sources across teams",
-              ],
-              resource: { label: "District & School Overview", url: ACADEMY_LINKS.districtSchoolOverview },
-            },
-            district: {
-              features: ["District Overview", "Reports & Custom Reports"],
-              responsibilities: [
-                "Monitor districtwide trends and variation across schools",
-                "Use data to guide system-level planning and resource allocation",
-              ],
-              resource: { label: "Creating Custom Reports", url: ACADEMY_LINKS.creatingCustomReports },
-            },
+              "Student Success functions as a whole-child visibility layer across academics, attendance, behavior, and SEL, helping teams see trends and act with clarity.",
           },
           features: {
             primary: [
               {
                 name: "Students Overview",
-                desc: "Holistic, early-warning view of risk across academics, attendance, behavior, and SEL.",
-                use: "Proactive identification and prioritization of student needs.",
-                link: "Students Overview",
+                desc: "Early-warning view across academics, attendance, behavior, and SEL.",
+                rationale: "Supports early identification and prioritization using a whole-child lens.",
                 url: ACADEMY_LINKS.studentsOverview,
               },
               {
-                name: "School Overview",
-                desc: "Schoolwide and grade-level trends that inform Tier 1 instructional planning.",
-                use: "Guiding system-level supports and high-level instructional adjustments.",
-                link: "District & School Overview",
-                url: ACADEMY_LINKS.districtSchoolOverview,
+                name: "Student Profiles",
+                desc: "Longitudinal student context with indicators and history.",
+                rationale: "Strengthens root-cause thinking before deciding supports.",
+                url: ACADEMY_LINKS.studentProfile,
+              },
+              {
+                name: "Student Groups (Smart/Static)",
+                desc: "Group students by criteria or team purpose; Smart Groups update automatically.",
+                rationale: "Supports meeting prep and consistent follow-up without manual lists.",
+                url: ACADEMY_LINKS.studentGroups,
               },
               {
                 name: "Reports & Custom Reports",
-                desc: "Monitor progress toward goals and analyze patterns across groups.",
-                use: "Combining indicators into actionable insights.",
-                link: "Creating Custom Reports",
+                desc: "Combine indicators to monitor patterns across groups and subgroups.",
+                rationale: "Supports monitoring progress and equity visibility across cohorts.",
                 url: ACADEMY_LINKS.creatingCustomReports,
               },
             ],
             supporting: [
               {
-                name: "Student Profiles",
-                desc: "Longitudinal, student-level context for problem-solving.",
-                use: "Individualized planning and student context.",
-                link: "Student Profile",
-                url: ACADEMY_LINKS.studentProfile,
+                name: "District & School Overview",
+                desc: "Schoolwide and grade-level trend views.",
+                rationale: "Supports Tier 1 planning and trend monitoring by leaders.",
+                url: ACADEMY_LINKS.districtSchoolOverview,
               },
               {
-                name: "Student Groups (Smart/Static)",
-                desc: "Dynamic grouping based on evolving data (e.g., academic risk + attendance).",
-                use: "Ongoing monitoring and focused cohort follow-up.",
-                link: "Create Student Groups",
-                url: ACADEMY_LINKS.studentGroups,
+                name: "Check-Ins",
+                desc: "Collect/track student check-in inputs and patterns over time.",
+                rationale: "Adds student voice/context to risk signals so plans match lived experience.",
+                url: ACADEMY_LINKS.checkInsGettingStarted,
+              },
+              {
+                name: "Playbook",
+                desc: "Evidence-based strategies to address whole-child needs.",
+                rationale: "Helps teams translate data into concrete next steps.",
+                url: ACADEMY_LINKS.playbookGettingStarted,
               },
             ],
           },
+          roles: {
+            teacher: {
+              responsibilities: [
+                "Review Students Overview routinely to spot At Risk/Critical signals (trend over time).",
+                "Use Student Profiles to inform differentiation and targeted supports.",
+                "Bring data-informed observations into grade-level or MTSS problem-solving.",
+              ],
+              doInPanorama: [
+                { label: "Use Students Overview filters (risk, trends, groups) to flag students", tool: "Students Overview" },
+                { label: "Open Student Profiles before proposing supports (context check)", tool: "Student Profile" },
+                { label: "Use Check-Ins/notes to add context when students are flagged", tool: "Check-Ins / Notes" },
+              ],
+              quickLinks: [
+                { label: "Students Overview", url: ACADEMY_LINKS.studentsOverview },
+                { label: "Student Profile Page", url: ACADEMY_LINKS.studentProfile },
+                { label: "Getting Started: Check-Ins", url: ACADEMY_LINKS.checkInsGettingStarted },
+              ],
+            },
+            mtss: {
+              responsibilities: [
+                "Prepare for MTSS meetings with shared data views and group lists.",
+                "Identify patterns across cohorts and confirm follow-up actions and owners.",
+                "Monitor at-risk students to confirm support appropriateness and next steps.",
+              ],
+              doInPanorama: [
+                { label: "Build Smart Groups for MTSS agendas (auto-updating)", tool: "Student Groups" },
+                { label: "Create custom reports to compare patterns across groups/subgroups", tool: "Custom Reports" },
+                { label: "Capture decisions: move students into supports (plans) when needed", tool: "Intervention Plans (as needed)" },
+              ],
+              quickLinks: [
+                { label: "Create Student Groups", url: ACADEMY_LINKS.studentGroups },
+                { label: "Creating Custom Reports", url: ACADEMY_LINKS.creatingCustomReports },
+                { label: "Check-Ins Use Cases", url: ACADEMY_LINKS.checkInsUseCases },
+              ],
+            },
+            leader: {
+              responsibilities: [
+                "Review schoolwide trends to inform Tier 1 instructional priorities.",
+                "Use reports for goal monitoring and staff data conversations.",
+                "Reinforce consistent use of shared data sources across teams.",
+              ],
+              doInPanorama: [
+                { label: "Use School Overview for grade-level trends and Tier 1 signals", tool: "School Overview" },
+                { label: "Use custom reports to monitor goals and subgroup patterns", tool: "Custom Reports" },
+                { label: "Look for evidence teams are using groups and reducing parallel trackers", tool: "Implementation routines" },
+              ],
+              quickLinks: [
+                { label: "District & School Overview", url: ACADEMY_LINKS.districtSchoolOverview },
+                { label: "Creating Custom Reports", url: ACADEMY_LINKS.creatingCustomReports },
+              ],
+            },
+            district: {
+              responsibilities: [
+                "Monitor districtwide trends and variation across schools.",
+                "Use data to guide system-level planning and resource allocation.",
+              ],
+              doInPanorama: [
+                { label: "Compare patterns across schools (reports) to identify system needs", tool: "Reports" },
+                { label: "Use subgroup trend monitoring to guide resourcing and coaching", tool: "Custom Reports" },
+              ],
+              quickLinks: [
+                { label: "District & School Overview", url: ACADEMY_LINKS.districtSchoolOverview },
+                { label: "Creating Custom Reports", url: ACADEMY_LINKS.creatingCustomReports },
+              ],
+            },
+          },
           lookFors: [
-            "Regular review of Students and School Overviews",
-            "Reports combining multiple indicators (e.g., Academics + SEL)",
-            "Data referenced consistently during MTSS/Grade-Level meetings",
-            "Reduced reliance on informal or manual tracking systems",
-            "Action steps clearly defined after every data review cycle",
-          ],
-          reflectionQs: [
-            "Which Student Success features are we using consistently?",
-            "Where do we need stronger routines for reviewing data?",
-            "What additional support would help teams use data effectively?",
+            "Regular review of Students Overview and trend filters (not one-off snapshots)",
+            "Groups/custom reports used in MTSS and grade-level meetings",
+            "Decisions documented as next steps (owners + timeline) after data review",
+            "Reduced reliance on parallel spreadsheets and manual trackers",
+            "Data dialogue includes multiple indicators (academics + attendance/behavior + SEL)",
           ],
           learnDo: {
             core: [
-              { label: "Students Overview in Student Success", url: ACADEMY_LINKS.studentsOverview },
-              { label: "District and School Overview in Student Success", url: ACADEMY_LINKS.districtSchoolOverview },
-              { label: "Creating Custom Reports", url: ACADEMY_LINKS.creatingCustomReports },
-            ],
-            roleQuickLinks: [
-              { role: "Teachers", label: "Student Profile Page", url: ACADEMY_LINKS.studentProfile },
-              { role: "MTSS Teams / Coordinators", label: "How to Create Student Groups", url: ACADEMY_LINKS.studentGroups },
-              {
-                role: "Student Voice (Check-Ins)",
-                label: "Getting Started: Navigating Check-Ins",
-                url: ACADEMY_LINKS.checkInsGettingStarted,
-                secondaryLabel: "Check-Ins Use Cases →",
-                secondaryUrl: ACADEMY_LINKS.checkInsUseCases,
-              },
+              { label: "Students Overview Guide", url: ACADEMY_LINKS.studentsOverview },
+              { label: "Student Profile Page", url: ACADEMY_LINKS.studentProfile },
+              { label: "How to Create Student Groups", url: ACADEMY_LINKS.studentGroups },
             ],
             nextLevel: [
-              { title: "Interventions Dashboard Overview", desc: "Monitor follow-through across plans.", url: ACADEMY_LINKS.interventionsDashboard },
-              { title: "Interventions Dashboard Use Cases", desc: "Examples of team workflows.", url: ACADEMY_LINKS.interventionsDashboardUseCases },
-              { title: "Getting Started with Playbook", desc: "Strategy support aligned to needs.", url: ACADEMY_LINKS.playbookGettingStarted },
+              { title: "Creating Custom Reports", desc: "Combine indicators and monitor patterns.", url: ACADEMY_LINKS.creatingCustomReports },
+              { title: "Check-Ins Use Cases", desc: "Use student voice as context for supports.", url: ACADEMY_LINKS.checkInsUseCases },
+              { title: "Getting Started with Playbook", desc: "Translate need into evidence-based action.", url: ACADEMY_LINKS.playbookGettingStarted },
             ],
           },
         },
 
         "tiered-supports": {
           id: "tiered-supports",
-          headerKicker: "POWER PRACTICES",
+          headerKicker: "POWER PRACTICE",
           headerTitle: "Tiered Supports with Fidelity",
-          statusChip: "Hub Mockup",
-          suggestedStart: "Panorama Alignment",
           alignment: {
             badge: "🟢",
             type: "Primary Leverage",
-            leverageLabel: "Panorama Leverage Level",
-            anchor:
-              "This Power Practice emphasizes providing timely, tiered supports based on student need, with clear documentation and regular progress monitoring to inform decisions.",
+            anchorActualPractice:
+              "Teams implement tiered supports based on student need, document interventions with clear ownership, and use progress monitoring to adjust supports based on evidence.",
             provenance:
-              "DCPS Power Practices Framework – see relevant MTSS and Tiered Supports strands for full description.",
-            why: [
-              "Tier 2/3 supports require consistent documentation and clear ownership across teams.",
-              "Progress monitoring is essential to determine whether supports are effective and should be adjusted.",
-              "Student Success functions as a system of record for plans, updates, and monitoring.",
+              "Source: DCPS Power Practices (SY25–26) – MTSS Tiered Supports + Progress Monitoring strands (internal reference).",
+            whyBullets: [
+              "Fidelity improves when plans, owners, and monitoring are visible to the whole team.",
+              "Progress monitoring prevents “set it and forget it” interventions.",
+              "Centralized documentation reduces gaps during staff transitions and handoffs.",
+            ],
+            routineExamples: [
+              { title: "Tier 2/3 plan creation", desc: "Define goals, strategies, owners, and monitoring method upfront.", tool: "Intervention Plans" },
+              { title: "Monitoring cadence", desc: "Update monitoring data routinely and review trendlines in meetings.", tool: "Progress Monitoring" },
+              { title: "Fidelity checks", desc: "Leaders/teams review dashboard signals (updates, status, plan health).", tool: "Interventions Dashboard" },
             ],
           },
           narrative: {
@@ -275,247 +356,151 @@
             body:
               "When implemented with fidelity, tiered supports reduce reactive referrals, strengthen shared ownership across teams, and ensure students receive the right support at the right time.",
             quote:
-              "Student Success can centralize intervention plans and progress monitoring, reducing parallel tracking systems.",
-          },
-          roles: {
-            teacher: {
-              features: ["Students Overview", "Student Profiles"],
-              responsibilities: [
-                "Identify students who may need supports based on trends (not one-off events)",
-                "Document observations and bring them to team problem-solving routines",
-                "Collaborate on classroom supports aligned to intervention plans",
-              ],
-              resource: { label: "Student Profile", url: ACADEMY_LINKS.studentProfile },
-            },
-            mtss: {
-              features: ["Intervention Plans", "Progress Monitoring"],
-              responsibilities: [
-                "Create and update intervention plans (individual and group)",
-                "Set progress monitoring methods and ensure updates occur regularly",
-                "Use dashboards to monitor follow-through and adjust supports",
-              ],
-              resource: { label: "Getting Started: Intervention Plans", url: ACADEMY_LINKS.interventionPlansGettingStarted },
-            },
-            leader: {
-              features: ["Interventions Dashboard", "Reports & Custom Reports"],
-              responsibilities: [
-                "Monitor fidelity: plans exist, progress is updated, and teams follow through",
-                "Use trends to remove barriers and strengthen routines",
-                "Ensure teams reduce parallel trackers outside Panorama",
-              ],
-              resource: { label: "Interventions Dashboard", url: ACADEMY_LINKS.interventionsDashboard },
-            },
-            district: {
-              features: ["Reports & Custom Reports", "Interventions Dashboard"],
-              responsibilities: [
-                "Monitor patterns of access to tiered supports across schools and groups",
-                "Use data to guide system-level resourcing and coaching priorities",
-              ],
-              resource: { label: "Creating Custom Reports", url: ACADEMY_LINKS.creatingCustomReports },
-            },
+              "Student Success can operate as the system of record for intervention plans and progress monitoring, reducing parallel trackers.",
           },
           features: {
             primary: [
               {
                 name: "Intervention Plans",
-                desc: "Create and manage student and group intervention plans with goals and strategies.",
-                use: "Consistent documentation and shared ownership of Tier 2/3 supports.",
-                link: "Intervention Plans",
+                desc: "Create and manage individual and group intervention plans.",
+                rationale: "Centralizes documentation, owners, and strategy selection for Tier 2/3.",
                 url: ACADEMY_LINKS.interventionPlans,
               },
               {
                 name: "Progress Monitoring",
-                desc: "Track outcomes over time using notes or custom methods with visuals.",
-                use: "Determine whether supports are working and adjust quickly.",
-                link: "Progress Monitoring",
+                desc: "Track outcomes over time (notes or custom method with graph).",
+                rationale: "Enables evidence-based decisions to continue, adjust, or exit supports.",
                 url: ACADEMY_LINKS.progressMonitoring,
               },
               {
                 name: "Interventions Dashboard",
-                desc: "Monitor implementation status and progress across plans.",
-                use: "Visibility into follow-through and plan health.",
-                link: "Interventions Dashboard",
+                desc: "Monitor plan health, follow-through, and status across students/groups.",
+                rationale: "Supports fidelity and leadership visibility without chasing spreadsheets.",
                 url: ACADEMY_LINKS.interventionsDashboard,
               },
             ],
             supporting: [
               {
                 name: "Student Groups (Smart/Static)",
-                desc: "Create groups for targeted supports and monitoring.",
-                use: "Manage cohorts and streamline follow-up.",
-                link: "Create Student Groups",
+                desc: "Group students receiving similar supports and monitor cohorts.",
+                rationale: "Supports meeting agendas and targeted follow-up.",
                 url: ACADEMY_LINKS.studentGroups,
               },
               {
                 name: "Playbook",
-                desc: "Browse research-backed strategies aligned to student needs.",
-                use: "Select evidence-based approaches for intervention plans.",
-                link: "Getting Started with Playbook",
+                desc: "Evidence-based strategies to inform intervention selection.",
+                rationale: "Strengthens the quality of strategy selection and consistency of practice.",
                 url: ACADEMY_LINKS.playbookGettingStarted,
               },
+              {
+                name: "Students Overview",
+                desc: "Identify students who may need tiered support based on trends.",
+                rationale: "Serves as the signal before Tier 2/3 planning begins.",
+                url: ACADEMY_LINKS.studentsOverview,
+              },
             ],
+          },
+          roles: {
+            teacher: {
+              responsibilities: [
+                "Identify students who may need supports based on trends (not single events).",
+                "Document observations and participate in problem-solving routines.",
+                "Align classroom supports with intervention plans when assigned.",
+              ],
+              doInPanorama: [
+                { label: "Use Students Overview to identify patterns and bring data to team", tool: "Students Overview" },
+                { label: "Review the plan for students you support and add relevant notes", tool: "Intervention Plans" },
+                { label: "Contribute progress monitoring evidence when you deliver the support", tool: "Progress Monitoring / Notes" },
+              ],
+              quickLinks: [
+                { label: "Students Overview", url: ACADEMY_LINKS.studentsOverview },
+                { label: "Intervention Plans (Getting Started)", url: ACADEMY_LINKS.interventionPlansGettingStarted },
+              ],
+            },
+            mtss: {
+              responsibilities: [
+                "Create/update intervention plans (individual and group) with clear ownership.",
+                "Set progress monitoring methods and ensure updates occur routinely.",
+                "Use dashboards to monitor follow-through and adjust supports.",
+              ],
+              doInPanorama: [
+                { label: "Create intervention plans with goal, strategy, team members", tool: "Intervention Plans" },
+                { label: "Define monitoring method and cadence; track data over time", tool: "Progress Monitoring" },
+                { label: "Use Interventions Dashboard to spot stalled plans", tool: "Interventions Dashboard" },
+              ],
+              quickLinks: [
+                { label: "Getting Started: Intervention Plans", url: ACADEMY_LINKS.interventionPlansGettingStarted },
+                { label: "Progress Monitoring", url: ACADEMY_LINKS.progressMonitoring },
+                { label: "Dashboard Use Cases", url: ACADEMY_LINKS.interventionsDashboardUseCases },
+              ],
+            },
+            leader: {
+              responsibilities: [
+                "Monitor fidelity: plans exist, progress is updated, teams follow through.",
+                "Use trend and plan health to remove barriers and strengthen routines.",
+                "Ensure teams reduce parallel trackers outside Student Success.",
+              ],
+              doInPanorama: [
+                { label: "Review dashboard signals for plan health and update cadence", tool: "Interventions Dashboard" },
+                { label: "Use reports to see patterns in access to supports across groups", tool: "Custom Reports" },
+              ],
+              quickLinks: [
+                { label: "Interventions Dashboard", url: ACADEMY_LINKS.interventionsDashboard },
+                { label: "Creating Custom Reports", url: ACADEMY_LINKS.creatingCustomReports },
+              ],
+            },
+            district: {
+              responsibilities: [
+                "Monitor patterns of access to tiered supports across schools and groups.",
+                "Use data to guide system-level resourcing and coaching priorities.",
+              ],
+              doInPanorama: [
+                { label: "Use reporting to monitor access and fidelity patterns across schools", tool: "Reports" },
+                { label: "Use subgroup patterns to guide coaching and resource deployment", tool: "Custom Reports" },
+              ],
+              quickLinks: [
+                { label: "Creating Custom Reports", url: ACADEMY_LINKS.creatingCustomReports },
+                { label: "Interventions Dashboard Overview", url: ACADEMY_LINKS.interventionsDashboard },
+              ],
+            },
           },
           lookFors: [
             "Tier 2/3 students have documented plans with clear owners",
             "Progress monitoring is updated routinely (not only at meetings)",
-            "Teams reference plan status and trends during problem-solving routines",
+            "Teams reference plan status and trendlines during problem-solving routines",
             "Fewer parallel trackers outside Student Success",
             "Supports adjust based on monitoring data (not time-based only)",
           ],
-          reflectionQs: [
-            "Do all Tier 2/3 students who need plans have them documented?",
-            "Are we updating progress monitoring consistently enough to make decisions?",
-            "What routine or role clarity would strengthen follow-through?",
-          ],
           learnDo: {
             core: [
-              { label: "Intervention Plans and Group Plan Page", url: ACADEMY_LINKS.interventionPlans },
-              { label: "Getting Started: Supporting Students with Intervention Plans", url: ACADEMY_LINKS.interventionPlansGettingStarted },
+              { label: "Getting Started: Intervention Plans", url: ACADEMY_LINKS.interventionPlansGettingStarted },
               { label: "Progress Monitoring for Interventions", url: ACADEMY_LINKS.progressMonitoring },
-            ],
-            roleQuickLinks: [
-              { role: "MTSS Teams / Coordinators", label: "Interventions Dashboard Use Cases", url: ACADEMY_LINKS.interventionsDashboardUseCases },
-              { role: "Teachers", label: "Student Profile Page", url: ACADEMY_LINKS.studentProfile },
-              { role: "Grouping", label: "How to Create Student Groups", url: ACADEMY_LINKS.studentGroups },
+              { label: "Interventions Dashboard Overview", url: ACADEMY_LINKS.interventionsDashboard },
             ],
             nextLevel: [
-              { title: "Interventions Dashboard Overview", desc: "Track plan health at a glance.", url: ACADEMY_LINKS.interventionsDashboard },
-              { title: "Creating Custom Reports", desc: "Monitor patterns across groups and schools.", url: ACADEMY_LINKS.creatingCustomReports },
-              { title: "Getting Started with Playbook", desc: "Find strategies aligned to needs.", url: ACADEMY_LINKS.playbookGettingStarted },
+              { title: "Interventions Dashboard Use Cases", desc: "Team workflows and routines.", url: ACADEMY_LINKS.interventionsDashboardUseCases },
+              { title: "Getting Started with Playbook", desc: "Strategy selection support.", url: ACADEMY_LINKS.playbookGettingStarted },
+              { title: "Create Student Groups", desc: "Cohorts and agenda prep.", url: ACADEMY_LINKS.studentGroups },
             ],
           },
         },
       };
 
-      const DEFAULT_PRACTICE = "data-informed";
-      const DEFAULT_ROLE = "teacher";
-      const VALID_TABS = ["toc", "practice", "alignment", "roadmap", "check-fors", "learn"];
-      const DEFAULT_TAB = "toc";
-
-      function safeTab(tab) {
-        return VALID_TABS.includes(tab) ? tab : DEFAULT_TAB;
-      }
-
-      function safePractice(id) {
-        return PRACTICES[id] ? id : DEFAULT_PRACTICE;
-      }
-
-      function safeRole(id) {
-        return BASE_ROLES[id] ? id : DEFAULT_ROLE;
-      }
-
-      function readParams() {
-        const sp = new URLSearchParams(window.location.search);
-        return {
-          practice: safePractice(sp.get("practice")),
-          role: safeRole(sp.get("role")),
-          tab: safeTab(sp.get("tab")),
-        };
-      }
-
-      function writeParams({ practice, role, tab }) {
-        const sp = new URLSearchParams(window.location.search);
-        sp.set("practice", safePractice(practice));
-        sp.set("role", safeRole(role));
-        sp.set("tab", safeTab(tab));
-        window.history.replaceState({}, "", `${window.location.pathname}?${sp.toString()}`);
-      }
-
-      function Modal({ title, children, onClose }) {
-        return (
-          <div className="fixed inset-0 z-[999] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-slate-900/40" onClick={onClose}></div>
-            <div className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden">
-              <div className="p-5 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Icon name="info" className="w-4 h-4 text-slate-600" />
-                  <h3 className="text-sm font-black uppercase tracking-widest text-slate-700">{title}</h3>
-                </div>
-                <button onClick={onClose} className="p-2 rounded-xl hover:bg-slate-100 transition" aria-label="Close">
-                  <Icon name="x" className="w-5 h-5 text-slate-600" />
-                </button>
-              </div>
-              <div className="p-6">{children}</div>
-            </div>
-          </div>
-        );
-      }
-
-      function LeverageChip({ alignment, onInfo }) {
-        return (
-          <div className="flex items-center gap-2 flex-wrap justify-end">
-            <span className="text-[10px] font-black px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 uppercase tracking-widest">
-              {alignment.leverageLabel}: {alignment.badge} {alignment.type}
-            </span>
-            <button
-              onClick={onInfo}
-              className="text-[10px] font-black px-3 py-1 rounded-full bg-white border border-slate-200 text-slate-700 uppercase tracking-widest hover:bg-slate-50 transition inline-flex items-center gap-2"
-              title="What does this mean?"
-            >
-              <Icon name="help-circle" className="w-3 h-3" />
-              What does this mean?
-            </button>
-          </div>
-        );
-      }
-
-      function ContextStrip({ practiceTitle, roleTitle, alignment, onKey }) {
-        return (
-          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3">
-            <div className="text-sm text-slate-700 font-semibold">
-              <span className="text-slate-500 font-black uppercase tracking-widest text-[10px] block">You are viewing</span>
-              <span className="font-black text-slate-800">{practiceTitle}</span>
-              <span className="text-slate-400"> • </span>
-              <span className="text-indigo-700 font-black">{roleTitle}</span>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] font-black px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 uppercase tracking-widest">
-                {alignment.leverageLabel}: {alignment.badge} {alignment.type}
-              </span>
-              <button
-                onClick={onKey}
-                className="text-[10px] font-black px-3 py-1 rounded-full bg-white border border-slate-200 text-slate-700 uppercase tracking-widest hover:bg-slate-50 transition"
-              >
-                Alignment Key
-              </button>
-            </div>
-          </div>
-        );
-      }
-
       function App() {
-        const initial = useMemo(() => readParams(), []);
-        const [selectedPractice, setSelectedPractice] = useState(initial.practice);
-        const [selectedRole, setSelectedRole] = useState(initial.role);
-        const [activeTab, setActiveTab] = useState(initial.tab);
+        const [selectedPractice, setSelectedPractice] = useState("data-informed");
+        const [selectedRole, setSelectedRole] = useState("teacher");
+        const [activeTab, setActiveTab] = useState("toc");
         const [showKey, setShowKey] = useState(false);
 
-        // HARD GUARD: if anything slips, snap back to safe values
-        useEffect(() => {
-          const safeP = safePractice(selectedPractice);
-          const safeR = safeRole(selectedRole);
-          const safeT = safeTab(activeTab);
-          if (safeP !== selectedPractice) setSelectedPractice(safeP);
-          if (safeR !== selectedRole) setSelectedRole(safeR);
-          if (safeT !== activeTab) setActiveTab(safeT);
-        }, [selectedPractice, selectedRole, activeTab]);
-
-        const practice = useMemo(() => PRACTICES[selectedPractice], [selectedPractice]);
-        const roleBase = useMemo(() => BASE_ROLES[selectedRole], [selectedRole]);
-        const roleData = useMemo(() => practice.roles[selectedRole], [practice, selectedRole]);
-        const practiceCards = Object.values(PRACTICES);
+        const practice = PRACTICES[selectedPractice];
+        const roleData = practice.roles[selectedRole];
 
         useEffect(() => {
-          writeParams({ practice: selectedPractice, role: selectedRole, tab: activeTab });
-        }, [selectedPractice, selectedRole, activeTab]);
-
-        useEffect(() => {
-          if (window.lucide && typeof window.lucide.createIcons === "function") window.lucide.createIcons();
+          if (window.lucide) window.lucide.createIcons();
         }, [selectedPractice, selectedRole, activeTab, showKey]);
 
         const tabs = [
-          { id: "toc", label: "All Practices", icon: "layout-grid" },
+          { id: "toc", label: "TOC", icon: "layout-grid" },
           { id: "practice", label: "Power Practice", icon: "book-open" },
           { id: "alignment", label: "Panorama Alignment", icon: "link" },
           { id: "roadmap", label: "Role Expectations", icon: "clipboard-list" },
@@ -523,49 +508,35 @@
           { id: "learn", label: "Learn & Do", icon: "graduation-cap" },
         ];
 
-        const commonPitfalls = [
-          "Relying on a single data point",
-          "Data review without next steps",
-          "Using parallel spreadsheets outside of Panorama",
-        ];
+        const practiceList = Object.values(PRACTICES);
 
         return (
-          <div className="min-h-screen bg-slate-50 text-slate-800 font-sans selection:bg-indigo-100 selection:text-indigo-900">
-            {/* Top Banner */}
-            <nav className="bg-[#003366] text-white p-4 shadow-lg sticky top-0 z-50">
-              <div className="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-4">
-                <div className="flex items-center gap-3 min-w-[220px]">
-                  <div className="bg-white p-1 rounded shadow-sm">
-                    <img
-                      src="https://upload.wikimedia.org/wikipedia/commons/4/4b/Seal_of_the_District_of_Columbia.svg"
-                      className="w-8 h-8"
-                      alt="DC Seal"
-                    />
+          <div className="min-h-screen">
+            {/* Header */}
+            <nav className="bg-[#003366] text-white p-4 sticky top-0 z-50 shadow-md">
+              <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:justify-between md:items-center gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="bg-white p-1 rounded">
+                    <Icon name="graduation-cap" className="w-6 h-6 text-[#003366]" />
                   </div>
                   <div>
-                    <p className="text-[10px] font-bold uppercase tracking-tighter leading-none opacity-90">District of Columbia</p>
-                    <p className="text-lg font-black tracking-tight leading-none">Public Schools</p>
+                    <p className="text-[10px] font-bold uppercase tracking-tighter opacity-80">DC Public Schools</p>
+                    <p className="text-base font-black tracking-tight leading-none uppercase">Power Practices Hub</p>
                   </div>
                 </div>
 
-                <div className="hidden lg:block text-right flex-1">
-                  <h1 className="text-xl font-bold tracking-tight uppercase">{practice.headerKicker}</h1>
-                  <p className="text-[10px] opacity-80 uppercase tracking-[0.2em] font-medium">{practice.headerTitle}</p>
-                </div>
-
-                {/* NEW: Practice selector in top header */}
-                <div className="flex items-center gap-2">
-                  <div className="hidden sm:block">
-                    <p className="text-[10px] font-black uppercase tracking-widest opacity-70">Select Practice</p>
+                <div className="flex flex-wrap items-center gap-2 justify-between md:justify-end">
+                  <div className="flex items-center gap-2 bg-white/10 border border-white/15 rounded-2xl px-3 py-2">
+                    <span className="text-[10px] font-black uppercase tracking-widest opacity-75">Practice</span>
                     <select
                       value={selectedPractice}
                       onChange={(e) => {
-                        setSelectedPractice(safePractice(e.target.value));
+                        setSelectedPractice(e.target.value);
                         setActiveTab("practice");
                       }}
-                      className="mt-1 bg-white/10 text-white border border-white/20 rounded-xl px-3 py-2 text-xs font-black uppercase tracking-widest focus:outline-none"
+                      className="bg-transparent text-white text-xs font-black uppercase tracking-widest focus:outline-none"
                     >
-                      {practiceCards.map((p) => (
+                      {practiceList.map((p) => (
                         <option key={p.id} value={p.id} className="text-slate-900">
                           {p.headerTitle}
                         </option>
@@ -575,18 +546,426 @@
 
                   <button
                     onClick={() => setShowKey(true)}
-                    className="text-[10px] font-black px-3 py-2 rounded-xl bg-white/10 border border-white/20 uppercase tracking-widest hover:bg-white/15 transition flex items-center gap-2"
-                    title="Panorama Leverage Level key"
+                    className="text-[10px] font-black uppercase px-4 py-2 bg-white/10 rounded-xl hover:bg-white/20 transition flex items-center gap-2"
                   >
-                    <Icon name="info" className="w-4 h-4" />
-                    Alignment Key
+                    <Icon name="info" className="w-3 h-3" /> Alignment Key
                   </button>
                 </div>
               </div>
             </nav>
 
-            <main className="max-w-7xl mx-auto p-4 md:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <main className="max-w-7xl mx-auto p-6 md:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
               {/* Sidebar */}
               <aside className="lg:col-span-3 space-y-4">
-                {/* Practice Selector (sidebar) */}
-                <div className="bg-white rounded-2
+                <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+                  <div>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3 block">
+                      Perspective
+                    </label>
+                    <div className="grid grid-cols-1 gap-2">
+                      {Object.values(BASE_ROLES).map((r) => (
+                        <button
+                          key={r.id}
+                          onClick={() => setSelectedRole(r.id)}
+                          className={`flex items-center gap-3 p-3 rounded-2xl text-left transition-all ${
+                            selectedRole === r.id
+                              ? "bg-indigo-50 border-indigo-200 ring-1 ring-indigo-200 shadow-sm"
+                              : "hover:bg-slate-50 border border-transparent text-slate-500"
+                          }`}
+                        >
+                          <Icon
+                            name={r.icon}
+                            className={`w-5 h-5 ${selectedRole === r.id ? "text-indigo-600" : "text-slate-400"}`}
+                          />
+                          <span className={`text-sm font-bold ${selectedRole === r.id ? "text-indigo-900" : ""}`}>
+                            {r.title}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="pt-4 border-t border-slate-100">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3 block">
+                      Navigation
+                    </label>
+                    <div className="flex flex-col gap-1">
+                      {tabs.map((t) => (
+                        <button
+                          key={t.id}
+                          onClick={() => setActiveTab(t.id)}
+                          className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
+                            activeTab === t.id
+                              ? "bg-slate-900 text-white shadow-lg translate-x-1"
+                              : "text-slate-500 hover:bg-slate-50"
+                          }`}
+                        >
+                          <Icon name={t.icon} className="w-4 h-4" />
+                          <span className="text-xs font-black uppercase tracking-widest">{t.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </aside>
+
+              {/* Content */}
+              <div className="lg:col-span-9">
+                {activeTab === "toc" ? (
+                  <div className="space-y-6 animate-in">
+                    <h2 className="text-2xl font-black text-slate-800 tracking-tight">Select a Power Practice</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {practiceList.map((p) => (
+                        <button
+                          key={p.id}
+                          onClick={() => {
+                            setSelectedPractice(p.id);
+                            setActiveTab("practice");
+                          }}
+                          className="bg-white p-6 rounded-3xl border border-slate-200 hover:border-indigo-400 hover:shadow-xl transition-all text-left group"
+                        >
+                          <div className="flex justify-between items-start mb-4">
+                            <span className="text-[10px] font-black uppercase bg-slate-100 px-3 py-1 rounded-full text-slate-500">
+                              {p.headerKicker}
+                            </span>
+                            <LeveragePill badge={p.alignment.badge} type={p.alignment.type} />
+                          </div>
+                          <h3 className="text-xl font-black text-slate-800 mb-2 group-hover:text-indigo-600">{p.headerTitle}</h3>
+                          <p className="text-sm text-slate-500 leading-relaxed">{p.alignment.anchorActualPractice}</p>
+                          <p className="text-[10px] text-slate-400 mt-3 uppercase font-bold tracking-widest">
+                            {p.alignment.provenance}
+                          </p>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-6 animate-in">
+                    {/* Title row */}
+                    <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-6 border-b border-slate-200">
+                      <div>
+                        <span className="text-xs font-black text-indigo-600 uppercase tracking-[0.2em]">{practice.headerKicker}</span>
+                        <h1 className="text-4xl font-black text-slate-900 tracking-tighter mt-1">{practice.headerTitle}</h1>
+                        <p className="text-[10px] text-slate-400 mt-2 uppercase font-bold tracking-widest">
+                          {practice.alignment.provenance}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-3 bg-white p-3 rounded-2xl border shadow-sm">
+                        <div className="p-2 bg-indigo-50 rounded-lg">
+                          <Icon name={BASE_ROLES[selectedRole].icon} className="w-5 h-5 text-indigo-600" />
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Viewing for</p>
+                          <p className="text-sm font-bold text-slate-800">{BASE_ROLES[selectedRole].title}</p>
+                        </div>
+                        <div className="ml-2">
+                          <LeveragePill badge={practice.alignment.badge} type={practice.alignment.type} />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Tab content container */}
+                    <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm min-h-[420px]">
+                      {/* Power Practice */}
+                      {activeTab === "practice" && (
+                        <div className="space-y-10">
+                          <div className="max-w-3xl">
+                            <p className="text-2xl font-semibold text-slate-700 leading-snug">"{practice.narrative.lead}"</p>
+                            <p className="mt-4 text-slate-500 text-lg leading-relaxed">{practice.narrative.body}</p>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="p-6 bg-slate-50 rounded-3xl border border-slate-200">
+                              <h4 className="font-black text-xs uppercase tracking-widest text-slate-500 mb-3 flex items-center gap-2">
+                                <Icon name="bookmark" className="w-4 h-4" /> Actual Practice
+                              </h4>
+                              <p className="text-slate-700 font-semibold leading-relaxed">{practice.alignment.anchorActualPractice}</p>
+                            </div>
+
+                            <div className="p-6 bg-emerald-50 rounded-3xl border border-emerald-100">
+                              <h4 className="font-black text-xs uppercase tracking-widest text-emerald-700 mb-3 flex items-center gap-2">
+                                <Icon name="sparkles" className="w-4 h-4" /> Why it matters
+                              </h4>
+                              <ul className="space-y-2 text-sm text-emerald-900 font-medium">
+                                {practice.alignment.whyBullets.map((b, i) => (
+                                  <li key={i} className="flex gap-2">
+                                    <span className="mt-0.5">•</span>
+                                    <span>{b}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          </div>
+
+                          <div className="p-7 bg-indigo-900 rounded-3xl text-white">
+                            <h4 className="text-xs font-black uppercase tracking-[0.2em] opacity-70 mb-2">Routines this supports</h4>
+                            <p className="text-lg font-bold tracking-tight opacity-95">{practice.narrative.quote}</p>
+
+                            <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                              {practice.alignment.routineExamples.map((r, idx) => (
+                                <div key={idx} className="bg-white/10 border border-white/10 rounded-2xl p-4">
+                                  <div className="text-[10px] font-black uppercase tracking-widest opacity-70 mb-2">
+                                    Routine 0{idx + 1}
+                                  </div>
+                                  <div className="font-bold">{r.title}</div>
+                                  <div className="text-sm opacity-85 mt-1">{r.desc}</div>
+                                  <div className="mt-3 text-[10px] font-black uppercase tracking-widest bg-white/10 inline-block px-2 py-1 rounded-lg">
+                                    Tool: {r.tool}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Panorama Alignment */}
+                      {activeTab === "alignment" && (
+                        <div className="space-y-8">
+                          <div className="p-6 bg-emerald-50 rounded-3xl border border-emerald-100 flex items-start gap-4">
+                            <div className="text-2xl mt-0.5">{practice.alignment.badge}</div>
+                            <div className="flex-1">
+                              <div className="flex flex-wrap items-center gap-2 justify-between">
+                                <div>
+                                  <h4 className="font-black text-xs uppercase tracking-widest text-emerald-800 mb-1">
+                                    Panorama Alignment
+                                  </h4>
+                                  <p className="text-emerald-900 font-semibold">{practice.alignment.type}</p>
+                                </div>
+                                <button
+                                  onClick={() => setShowKey(true)}
+                                  className="text-[10px] font-black uppercase px-3 py-2 bg-white/70 rounded-xl hover:bg-white transition flex items-center gap-2 border border-emerald-100"
+                                >
+                                  <Icon name="help-circle" className="w-3 h-3" /> What does this mean?
+                                </button>
+                              </div>
+                              <p className="text-sm text-emerald-700 mt-3 leading-relaxed">
+                                {practice.alignment.anchorActualPractice}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-4">
+                              <h4 className="font-black text-xs uppercase text-slate-400 tracking-widest">
+                                Primary Features to Leverage
+                              </h4>
+
+                              {practice.features.primary.map((f, idx) => (
+                                <a
+                                  key={`${f.name}-${idx}`}
+                                  href={f.url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="block p-5 bg-slate-50 rounded-2xl hover:bg-white hover:shadow-md border border-transparent hover:border-slate-200 transition-all group"
+                                >
+                                  <div className="flex justify-between items-center mb-1">
+                                    <span className="font-bold text-slate-800">{f.name}</span>
+                                    <Icon name="external-link" className="w-4 h-4 text-slate-300 group-hover:text-indigo-500" />
+                                  </div>
+                                  <p className="text-xs text-slate-500">{f.desc}</p>
+                                  <div className="mt-3 text-[11px] text-slate-600 font-semibold">
+                                    Why this aligns: <span className="font-medium text-slate-500">{f.rationale}</span>
+                                  </div>
+                                </a>
+                              ))}
+                            </div>
+
+                            <div className="space-y-4">
+                              <h4 className="font-black text-xs uppercase text-slate-400 tracking-widest">Supporting Features</h4>
+
+                              {practice.features.supporting.map((f, idx) => (
+                                <a
+                                  key={`${f.name}-${idx}`}
+                                  href={f.url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="block p-5 bg-white rounded-2xl hover:bg-slate-50 border border-slate-100 hover:border-slate-200 transition-all group"
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <div>
+                                      <div className="text-sm font-semibold text-slate-700">{f.name}</div>
+                                      <div className="text-xs text-slate-500 mt-1">{f.desc}</div>
+                                    </div>
+                                    <Icon name="chevron-right" className="w-4 h-4 text-slate-300 group-hover:text-slate-500" />
+                                  </div>
+                                  <div className="mt-3 text-[11px] text-slate-600 font-semibold">
+                                    Why this aligns: <span className="font-medium text-slate-500">{f.rationale}</span>
+                                  </div>
+                                </a>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Role Expectations */}
+                      {activeTab === "roadmap" && (
+                        <div className="space-y-8">
+                          <div className="bg-indigo-900 p-8 rounded-3xl text-white">
+                            <h4 className="text-xs font-black uppercase tracking-[0.2em] opacity-60 mb-2">Role Expectations</h4>
+                            <p className="text-2xl font-bold tracking-tight">What {BASE_ROLES[selectedRole].title} are expected to do</p>
+                            <p className="mt-2 text-sm opacity-80">
+                              Focus: <span className="font-bold">{BASE_ROLES[selectedRole].focus}</span>
+                            </p>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="p-6 rounded-3xl bg-slate-50 border border-slate-200">
+                              <h4 className="font-black text-xs uppercase tracking-widest text-slate-500 mb-4 flex items-center gap-2">
+                                <Icon name="check-circle-2" className="w-4 h-4" /> Responsibilities
+                              </h4>
+                              <div className="space-y-3">
+                                {roleData.responsibilities.map((resp, i) => (
+                                  <div key={i} className="flex items-start gap-3 text-sm text-slate-700 font-medium">
+                                    <span className="mt-0.5 text-slate-400">•</span>
+                                    <span>{resp}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+
+                            <div className="p-6 rounded-3xl bg-white border border-slate-200">
+                              <h4 className="font-black text-xs uppercase tracking-widest text-slate-500 mb-4 flex items-center gap-2">
+                                <Icon name="mouse-pointer-click" className="w-4 h-4" /> Do this in Student Success
+                              </h4>
+                              <div className="space-y-3">
+                                {roleData.doInPanorama.map((step, i) => (
+                                  <div key={i} className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                                    <div className="text-sm font-semibold text-slate-700">{step.label}</div>
+                                    <div className="mt-2 inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-indigo-700 bg-indigo-50 px-2 py-1 rounded-full">
+                                      <Icon name="layers" className="w-3 h-3" /> {step.tool}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="p-6 rounded-3xl border border-slate-200 bg-white">
+                            <h4 className="font-black text-xs uppercase tracking-widest text-slate-500 mb-4 flex items-center gap-2">
+                              <Icon name="external-link" className="w-4 h-4" /> Quick Academy Links
+                            </h4>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                              {roleData.quickLinks.map((l, i) => (
+                                <a
+                                  key={i}
+                                  href={l.url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="flex items-center justify-between p-4 bg-slate-50 border border-slate-100 rounded-2xl hover:bg-white hover:border-slate-200 hover:shadow-sm transition group"
+                                >
+                                  <span className="text-sm font-bold text-slate-700">{l.label}</span>
+                                  <Icon name="arrow-up-right" className="w-4 h-4 text-slate-300 group-hover:text-indigo-500" />
+                                </a>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Leader Look-Fors */}
+                      {activeTab === "check-fors" && (
+                        <div className="space-y-8">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div>
+                              <h4 className="font-black text-xs uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-2">
+                                <Icon name="search" className="w-3 h-3" /> Evidence of implementation
+                              </h4>
+                              <div className="space-y-3">
+                                {practice.lookFors.map((l, i) => (
+                                  <div key={i} className="flex items-start gap-3 text-sm text-slate-600 font-medium">
+                                    <Icon name="check-circle-2" className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                                    <span>{l}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+
+                            <div className="p-6 bg-slate-50 rounded-3xl border border-slate-200">
+                              <h4 className="font-black text-xs uppercase tracking-widest text-slate-400 mb-4">Quality note</h4>
+                              <p className="text-sm text-slate-600 leading-relaxed italic">
+                                Look for teams using multiple indicators and documenting next steps, rather than “reviewing data” without decisions.
+                              </p>
+                              <div className="mt-4 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                                Tip: Require owners + dates for follow-up actions.
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Learn & Do */}
+                      {activeTab === "learn" && (
+                        <div className="space-y-8">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div className="space-y-4">
+                              <h4 className="font-black text-xs uppercase tracking-widest text-slate-400 mb-4">Core Academy Training</h4>
+                              {practice.learnDo.core.map((l, i) => (
+                                <a
+                                  key={i}
+                                  href={l.url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="flex items-center justify-between p-4 bg-white border border-slate-200 rounded-2xl hover:bg-slate-50 transition shadow-sm group"
+                                >
+                                  <span className="text-sm font-bold text-slate-700">{l.label}</span>
+                                  <Icon name="arrow-up-right" className="w-4 h-4 text-slate-300 group-hover:text-indigo-500" />
+                                </a>
+                              ))}
+                            </div>
+
+                            <div className="space-y-4">
+                              <h4 className="font-black text-xs uppercase tracking-widest text-slate-400 mb-4">Level Up</h4>
+                              {practice.learnDo.nextLevel.map((l, i) => (
+                                <a
+                                  key={i}
+                                  href={l.url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="block p-5 bg-slate-900 rounded-2xl group hover:scale-[1.02] transition-transform"
+                                >
+                                  <h5 className="text-white font-bold text-sm mb-1 group-hover:text-indigo-300">{l.title}</h5>
+                                  <p className="text-xs text-slate-400">{l.desc}</p>
+                                </a>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </main>
+
+            {showKey && (
+              <Modal title="Panorama Leverage Level Key" onClose={() => setShowKey(false)}>
+                <div className="space-y-4">
+                  {LEVERAGE_KEY.map((k, i) => (
+                    <div key={i} className="flex items-start gap-4">
+                      <div className={`shrink-0 w-44 text-[10px] font-black uppercase px-3 py-1.5 rounded-full text-center ${k.color}`}>
+                        {k.label}
+                      </div>
+                      <p className="text-sm text-slate-600 leading-relaxed">{k.meaning}</p>
+                    </div>
+                  ))}
+                </div>
+                <div className="pt-6 border-t mt-4">
+                  <p className="text-[10px] text-slate-400 leading-relaxed uppercase font-bold tracking-widest">Note:</p>
+                  <p className="text-[11px] text-slate-500 leading-relaxed mt-1 italic">
+                    Leverage levels describe how central Student Success is to executing the practice. Levels can evolve as routines and platform capabilities mature.
+                  </p>
+                </div>
+              </Modal>
+            )}
+          </div>
+        );
+      }
+
+      const root = ReactDOM.createRoot(document.getElementById("root"));
+      root.render(<App />);
+    </script>
+  </body>
+</html>
