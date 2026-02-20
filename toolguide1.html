@@ -4,11 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Solara Tool Guide & Builder</title>
-    <!-- Tailwind CSS -->
+    <!-- Tailwind CSS for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Lucide Icons -->
+    <!-- Lucide Icons for the visual elements -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- React & Babel -->
+    <!-- React & Babel to run the application logic -->
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -20,7 +20,7 @@
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
         
-        /* Ensure icons have a baseline size to prevent layout shift before Lucide loads */
+        /* Pre-defined sizes for icons to prevent them flickering on load */
         [data-lucide] {
             display: inline-block;
             width: 1.25rem;
@@ -39,11 +39,43 @@
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
+
+        /* Loading Screen Styles */
+        #loader {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            color: #161242;
+            background-color: white;
+        }
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #1FAA4A;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1rem;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body class="bg-white text-slate-900">
-    <div id="root"></div>
+    <!-- Initial Loading UI: This is what prevents the "Blank Screen" on GitHub -->
+    <div id="root">
+        <div id="loader">
+            <div class="spinner"></div>
+            <p style="font-weight: 600;">Initializing Solara Tool Guide...</p>
+            <p style="font-size: 0.8rem; color: #64748b; margin-top: 0.5rem;">Processing scripts (this may take a moment)...</p>
+        </div>
+    </div>
 
+    <!-- The Script: The "Brain" of your application -->
     <script type="text/babel" data-type="module">
         const { useState, useEffect, useMemo } = React;
         
@@ -52,12 +84,10 @@
         import { getFirestore, collection, doc, setDoc, onSnapshot, query, deleteDoc, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
-        // --- CONSTANTS ---
+        // --- BRAND COLORS ---
         const PANO_NAVY = "#161242";
         const PANO_GREEN = "#1FAA4A";
         const PANO_BLUE = "#006DB0"; 
-        const DARK_GRAY = "#333333"; 
-        const LIGHT_GRAY = "#EEEEEE"; 
         const SECONDARY_TURQUOISE = "#108A7D";
         const SECONDARY_TEAL = "#00A1BB";
         const SECONDARY_LAVENDER = "#867EBB";
@@ -71,16 +101,26 @@
         };
 
         // --- FIREBASE CONFIG & INIT ---
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
+        let firebaseConfig = {};
+        try {
+            // Safe check for the config variable
+            firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        } catch (e) {
+            console.warn("Firebase config not found. App will run in static mode.");
+        }
+
+        const app = firebaseConfig.apiKey ? initializeApp(firebaseConfig) : null;
+        const auth = app ? getAuth(app) : null;
+        const db = app ? getFirestore(app) : null;
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'solara-tool-guide-default';
 
-        // --- GEMINI API UTILS ---
+        // --- AI LOGIC ---
         const callGemini = async (userQuery, retryCount = 0) => {
+            if (!apiKey) {
+                throw new Error("Missing Gemini API Key. Add your key to the script to use the Assistant.");
+            }
             const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
-            const systemPrompt = `You are the Solara Custom Tool Assistant. Help educators design precise Custom Tools. Instructions must be PLAIN TEXT only. Output must be a valid JSON object matching the schema.`;
+            const systemPrompt = `You are the Solara Custom Tool Assistant. Help educators design precise Custom Tools. Output must be a valid JSON object. Instructions must be PLAIN TEXT.`;
             const payload = {
                 contents: [{ parts: [{ text: `Educator Need: ${userQuery}` }] }],
                 systemInstruction: { parts: [{ text: systemPrompt }] },
@@ -106,14 +146,9 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
-                if (!response.ok) {
-                    const err = await response.json();
-                    throw new Error(err.error?.message || 'API failed');
-                }
+                if (!response.ok) throw new Error('AI API Error');
                 const result = await response.json();
-                const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
-                if (!text) throw new Error('Empty AI response');
-                return JSON.parse(text);
+                return JSON.parse(result.candidates[0].content.parts[0].text);
             } catch (error) {
                 if (retryCount < 5) {
                     await new Promise(r => setTimeout(r, Math.pow(2, retryCount) * 1000));
@@ -123,7 +158,7 @@
             }
         };
 
-        // --- STATIC DATA ---
+        // --- FULL LIBRARY DATA ---
         const APP_DATA = {
             mtss: {
                 id: 'mtss',
@@ -131,7 +166,7 @@
                 shortTitle: "MTSS Tools",
                 icon: <Icon name="users" style={{ color: PANO_GREEN }} />,
                 accent: SECONDARY_TURQUOISE,
-                description: "Develop multi-tiered support systems, tiered interventions, and student assistance frameworks to improve overall student academic and behavioral outcomes.",
+                description: "Develop multi-tiered support systems, tiered interventions, and student assistance frameworks.",
                 summary: "Multi-tiered support systems, interventions, and student assistance.",
                 tools: [
                     {
@@ -296,9 +331,9 @@
             }
         };
 
-        // --- SUB-COMPONENTS ---
+        // --- COMPONENTS ---
 
-        function ToolCard({ tool, categoryId, index, onCopy, accentColor, initiallyExpanded = false, onDelete = null }) {
+        function ToolCard({ tool, categoryId, index, onCopy, initiallyExpanded = false, onDelete = null }) {
             const [isExpanded, setIsExpanded] = useState(initiallyExpanded);
             const [copyFeedback, setCopyFeedback] = useState(null);
 
@@ -338,7 +373,7 @@
                     </div>
 
                     {isExpanded && (
-                        <div className="p-6 border-t border-slate-100 bg-slate-50/30 grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div className="p-6 border-t border-slate-100 bg-slate-50/30 grid grid-cols-1 lg:grid-cols-2 gap-8 animate-in">
                             <div className="space-y-4">
                                 <div className="flex items-center justify-between">
                                     <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-1.5"><Icon name="file-text" className="w-3 h-3" /> Instructions</label>
@@ -352,13 +387,13 @@
                                 <div className="p-4 rounded-xl border border-slate-200 bg-white italic text-[13px] text-slate-700 whitespace-pre-wrap leading-relaxed">"{tool.prompt || tool.instructions}"</div>
                             </div>
                             <div>
-                                <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 block mb-3">Context Fields</label>
+                                <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 block mb-3">Recommended Context Fields</label>
                                 <div className="flex flex-wrap gap-2">
                                     {fields.length > 0 ? fields.map((f, i) => (
                                         <div key={i} className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-600 shadow-sm font-medium">
                                             {typeof f === 'string' ? f : f.fieldName}
                                         </div>
-                                    )) : <span className="text-xs text-slate-400">None specified.</span>}
+                                    )) : <span className="text-xs text-slate-400">No specific fields recommended.</span>}
                                 </div>
                             </div>
                         </div>
@@ -366,8 +401,6 @@
                 </div>
             );
         }
-
-        // --- MAIN APP ---
 
         const App = () => {
             const [user, setUser] = useState(null);
@@ -380,32 +413,31 @@
             const [builderLoading, setBuilderLoading] = useState(false);
             const [aiDraft, setAiDraft] = useState(null);
 
-            // Crucial: Re-run Lucide scan whenever the view or categories change
+            // Re-run Lucide on every render to catch dynamic elements
             useEffect(() => {
-                if (window.lucide) {
-                    window.lucide.createIcons();
-                }
+                if (window.lucide) window.lucide.createIcons();
             });
 
+            // Authentication logic
             useEffect(() => {
-                const initAuth = async () => {
-                    try {
-                        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                            await signInWithCustomToken(auth, __initial_auth_token);
-                        } else {
-                            await signInAnonymously(auth);
-                        }
-                    } catch (e) { console.error("Auth init error:", e); }
-                };
-                initAuth();
+                if (!auth) return;
                 const unsub = onAuthStateChanged(auth, setUser);
+                const signIn = async () => {
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                };
+                signIn();
                 return () => unsub();
             }, []);
 
+            // Data listener
             useEffect(() => {
-                if (!user) return;
+                if (!user || !db) return;
                 const q = collection(db, 'artifacts', appId, 'users', user.uid, 'drafts');
-                return onSnapshot(q, (s) => setDrafts(s.docs.map(d => ({ id: d.id, ...d.data() }))), (e) => console.error("Firestore error:", e));
+                return onSnapshot(q, (s) => setDrafts(s.docs.map(d => ({ id: d.id, ...d.data() }))));
             }, [user]);
 
             const handleCopy = (text) => {
@@ -418,24 +450,21 @@
             };
 
             const handleSave = async (t) => {
-                if (!user) return;
-                try {
-                    await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'drafts'), { ...t, createdAt: serverTimestamp() });
-                    setAiDraft(null); 
-                    setBuilderInput(''); 
-                    setActiveView('history');
-                } catch (e) { console.error("Save error:", e); }
+                if (!db || !user) {
+                    alert("Persistence unavailable in preview. Add your Firebase config to save.");
+                    return;
+                }
+                await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'drafts'), { ...t, createdAt: serverTimestamp() });
+                setAiDraft(null); setBuilderInput(''); setActiveView('history');
             };
 
             const handleGenerate = async () => {
                 if (!builderInput.trim()) return;
                 setBuilderLoading(true); setAiDraft(null);
                 try { 
-                    const r = await callGemini(builderInput); 
-                    setAiDraft(r); 
+                    const r = await callGemini(builderInput); setAiDraft(r); 
                 } catch (e) { 
-                    console.error(e); 
-                    alert("Error drafting tool. Please check your API key and try again.");
+                    alert(e.message);
                 } finally { setBuilderLoading(false); }
             };
 
@@ -443,12 +472,11 @@
 
             const matchingTools = useMemo(() => {
                 if (!searchQuery) return [];
-                const q = searchQuery.toLowerCase();
                 const results = [];
                 Object.values(APP_DATA).forEach(cat => {
                     cat.tools.forEach(tool => {
-                        if (tool.title.toLowerCase().includes(q) || tool.description.toLowerCase().includes(q) || cat.title.toLowerCase().includes(q)) {
-                            results.push({ ...tool, categoryId: cat.id, accent: cat.accent });
+                        if (tool.title.toLowerCase().includes(searchQuery.toLowerCase()) || cat.title.toLowerCase().includes(searchQuery.toLowerCase())) {
+                            results.push({ ...tool, categoryId: cat.id });
                         }
                     });
                 });
@@ -457,7 +485,7 @@
 
             return (
                 <div className="min-h-screen bg-white text-slate-900 font-sans flex overflow-hidden">
-                    {/* Sidebar */}
+                    {/* Sidebar Navigation */}
                     <aside className={`fixed inset-y-0 left-0 w-72 bg-white border-r border-slate-200 z-50 transform transition-transform duration-300 lg:relative lg:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
                         <div className="flex flex-col h-full p-6">
                             <div className="flex items-center justify-between mb-8">
@@ -465,13 +493,13 @@
                                     <div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center text-white font-bold shadow-sm">S</div>
                                     <h1 className="font-bold text-xl tracking-tight" style={{ color: PANO_NAVY }}>Solara Guide</h1>
                                 </div>
-                                <button className="lg:hidden p-2 hover:bg-slate-100 rounded-lg" onClick={() => setIsSidebarOpen(false)}><Icon name="x" /></button>
+                                <button className="lg:hidden p-2" onClick={() => setIsSidebarOpen(false)}><Icon name="x" /></button>
                             </div>
                             <nav className="flex-1 space-y-1 overflow-y-auto custom-scrollbar">
                                 <button onClick={() => { setActiveView('home'); setActiveCategory(null); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors ${activeView === 'home' && !activeCategory ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:bg-slate-50'}`}><Icon name="home" /> Home</button>
                                 <button onClick={() => { setActiveView('builder'); setActiveCategory(null); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors ${activeView === 'builder' ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:bg-slate-50'}`}><Icon name="wand-2" className="text-amber-500" /> Tool Assistant</button>
                                 <button onClick={() => { setActiveView('history'); setActiveCategory(null); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors ${activeView === 'history' ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:bg-slate-50'}`}><Icon name="history" /> My Drafts ({drafts.length})</button>
-                                <div className="pt-6 pb-2 px-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">Library</div>
+                                <div className="pt-6 pb-2 px-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">Topic Library</div>
                                 {categoryOrder.map(id => (
                                     <button key={id} onClick={() => { setActiveCategory(id); setActiveView('home'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors ${activeCategory === id ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:bg-slate-50'}`}>
                                         <div className="w-5 flex justify-center">{APP_DATA[id].icon}</div>
@@ -482,19 +510,13 @@
                         </div>
                     </aside>
 
-                    {/* Main Content */}
+                    {/* Main Workspace */}
                     <main className="flex-1 h-full overflow-y-auto flex flex-col bg-slate-50/30">
                         <header className="h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-between sticky top-0 z-40 backdrop-blur-sm bg-white/90">
-                            <button className="lg:hidden p-2 hover:bg-slate-100 rounded-lg mr-2" onClick={() => setIsSidebarOpen(true)}><Icon name="menu" /></button>
+                            <button className="lg:hidden p-2 mr-2" onClick={() => setIsSidebarOpen(true)}><Icon name="menu" /></button>
                             <div className="flex-1 max-w-xl relative">
                                 <Icon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
-                                <input 
-                                    type="text" 
-                                    placeholder="Search tools or categories..." 
-                                    className="w-full h-10 bg-slate-100 rounded-xl pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all" 
-                                    value={searchQuery} 
-                                    onChange={(e) => setSearchQuery(e.target.value)} 
-                                />
+                                <input type="text" placeholder="Search prompts..." className="w-full h-10 bg-slate-100 rounded-xl pl-10 pr-4 text-sm outline-none" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
                             </div>
                         </header>
 
@@ -502,33 +524,26 @@
                             {searchQuery ? (
                                 <div className="animate-in">
                                     <h2 className="text-2xl font-bold mb-6">Search Results</h2>
-                                    {matchingTools.length > 0 ? (
-                                        matchingTools.map((t, i) => <ToolCard key={i} tool={t} categoryId={t.categoryId} index={i} onCopy={handleCopy} />)
-                                    ) : <p className="text-slate-500">No tools matched "{searchQuery}".</p>}
+                                    {matchingTools.map((t, i) => <ToolCard key={i} tool={t} categoryId={t.categoryId} index={i} onCopy={handleCopy} />)}
                                 </div>
                             ) : activeView === 'builder' ? (
                                 <div className="max-w-3xl mx-auto animate-in">
                                     <div className="mb-8 text-center">
-                                        <div className="w-16 h-16 bg-amber-50 rounded-2xl flex items-center justify-center mx-auto mb-4 text-amber-500 shadow-sm">
-                                            <Icon name="wand-2" className="w-8 h-8" />
-                                        </div>
+                                        <div className="w-16 h-16 bg-amber-50 rounded-2xl flex items-center justify-center mx-auto mb-4 text-amber-500 shadow-sm"><Icon name="wand-2" className="w-8 h-8" /></div>
                                         <h2 className="text-3xl font-bold">Tool Assistant</h2>
-                                        <p className="text-slate-500 mt-2">Describe a task and AI will design the perfect prompt.</p>
+                                        <p className="text-slate-500 mt-2">Describe a task and AI will design the instructions for you.</p>
                                     </div>
                                     <div className="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm">
-                                        <label className="block text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">What do you want to build?</label>
-                                        <textarea className="w-full h-40 bg-slate-50 border border-slate-200 rounded-xl p-6 mb-6 outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all resize-none" placeholder="e.g., I need a tool to help draft supportive parent emails about missed homework..." value={builderInput} onChange={(e) => setBuilderInput(e.target.value)} />
-                                        <button onClick={handleGenerate} disabled={builderLoading} className="w-full py-4 rounded-xl bg-slate-900 text-white font-bold flex justify-center gap-3 items-center hover:bg-slate-800 transition-colors shadow-lg shadow-slate-900/10 active:scale-95 disabled:opacity-50">
+                                        <textarea className="w-full h-40 bg-slate-50 border border-slate-200 rounded-xl p-6 mb-6 outline-none focus:ring-2 focus:ring-emerald-500/20" placeholder="e.g., I need a tool for drafting parent emails..." value={builderInput} onChange={(e) => setBuilderInput(e.target.value)} />
+                                        <button onClick={handleGenerate} disabled={builderLoading} className="w-full py-4 rounded-xl bg-slate-900 text-white font-bold flex justify-center gap-3 items-center">
                                             {builderLoading ? <Icon name="loader-2" className="animate-spin" /> : <Icon name="sparkles" />} Generate Specs
                                         </button>
                                     </div>
                                     {aiDraft && (
-                                        <div className="mt-12 space-y-4">
+                                        <div className="mt-12 space-y-4 animate-in">
                                             <div className="flex justify-between items-center px-2">
-                                                <h3 className="font-bold text-lg flex items-center gap-2"><Icon name="sparkles" className="text-amber-500" /> Generated Draft</h3>
-                                                <button onClick={() => handleSave(aiDraft)} className="px-4 py-2 bg-emerald-500 text-white rounded-xl font-bold hover:bg-emerald-600 transition-all shadow-md flex items-center gap-2">
-                                                    <Icon name="save" className="w-4 h-4" /> Save Draft
-                                                </button>
+                                                <h3 className="font-bold text-lg">Generated Draft</h3>
+                                                <button onClick={() => handleSave(aiDraft)} className="px-4 py-2 bg-emerald-500 text-white rounded-xl font-bold">Save Draft</button>
                                             </div>
                                             <ToolCard tool={aiDraft} categoryId="p" index={0} onCopy={handleCopy} initiallyExpanded />
                                         </div>
@@ -536,52 +551,28 @@
                                 </div>
                             ) : activeView === 'history' ? (
                                 <div className="animate-in">
-                                    <h2 className="text-3xl font-bold mb-6">My Saved Drafts</h2>
-                                    {drafts.length > 0 ? (
-                                        drafts.map((d, i) => (
-                                            <ToolCard key={d.id} tool={d} categoryId="h" index={i} onCopy={handleCopy} onDelete={() => deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'drafts', d.id))} />
-                                        ))
-                                    ) : (
-                                        <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-slate-300">
-                                            <Icon name="history" className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                                            <p className="text-slate-400 font-medium">No drafts saved yet.</p>
-                                        </div>
-                                    )}
+                                    <h2 className="text-3xl font-bold mb-6">My Drafts</h2>
+                                    {drafts.length > 0 ? drafts.map((d, i) => <ToolCard key={d.id} tool={d} categoryId="h" index={i} onCopy={handleCopy} onDelete={() => deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'drafts', d.id))} />) : <p className="text-center py-20 text-slate-400">No drafts saved yet.</p>}
                                 </div>
                             ) : activeCategory ? (
                                 <div className="animate-in">
-                                    <div className="flex items-center gap-4 mb-8">
-                                        <div className="w-16 h-16 rounded-2xl bg-white flex items-center justify-center shadow-sm border border-slate-100">
-                                            {React.cloneElement(APP_DATA[activeCategory].icon, { className: "w-8 h-8" })}
-                                        </div>
-                                        <div>
-                                            <h2 className="text-3xl font-bold" style={{ color: PANO_NAVY }}>{APP_DATA[activeCategory].title}</h2>
-                                            <p className="text-slate-500 mt-1">{APP_DATA[activeCategory].description}</p>
-                                        </div>
-                                    </div>
-                                    <div className="grid grid-cols-1 gap-4">
-                                        {APP_DATA[activeCategory].tools.map((t, i) => <ToolCard key={i} tool={t} categoryId={activeCategory} index={i} onCopy={handleCopy} />)}
-                                    </div>
+                                    <h2 className="text-3xl font-bold mb-2" style={{ color: PANO_NAVY }}>{APP_DATA[activeCategory].title}</h2>
+                                    <p className="text-slate-500 mb-8">{APP_DATA[activeCategory].description}</p>
+                                    {APP_DATA[activeCategory].tools.map((t, i) => <ToolCard key={i} tool={t} categoryId={activeCategory} index={i} onCopy={handleCopy} />)}
                                 </div>
                             ) : (
                                 <div className="animate-in">
                                     <div className="mb-12">
                                         <h2 className="text-4xl font-bold mb-4" style={{ color: PANO_NAVY }}>Solara Tool Guide</h2>
-                                        <p className="text-lg text-slate-500 max-w-3xl leading-relaxed">
-                                            Discover use-cases and exemplar instructions to create high-impact custom tools for your workspace.
-                                        </p>
+                                        <p className="text-lg text-slate-500 max-w-3xl leading-relaxed">Discover use-cases and instructions for custom tools.</p>
                                     </div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                         {categoryOrder.map(id => (
-                                            <div key={id} onClick={() => setActiveCategory(id)} className="group bg-white p-8 rounded-2xl border border-slate-200 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col">
-                                                <div className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center mb-6 group-hover:bg-emerald-50 transition-colors">
-                                                    {APP_DATA[id].icon}
-                                                </div>
-                                                <h3 className="text-xl font-bold mb-2 group-hover:text-emerald-600 transition-colors">{APP_DATA[id].title}</h3>
+                                            <div key={id} onClick={() => setActiveCategory(id)} className="bg-white p-8 rounded-2xl border border-slate-200 hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer flex flex-col">
+                                                <div className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center mb-6">{APP_DATA[id].icon}</div>
+                                                <h3 className="text-xl font-bold mb-2">{APP_DATA[id].title}</h3>
                                                 <p className="text-sm text-slate-500 mb-8 flex-grow leading-relaxed">{APP_DATA[id].summary}</p>
-                                                <div className="text-emerald-600 font-bold text-[10px] uppercase tracking-widest flex items-center gap-1 group-hover:gap-2 transition-all">
-                                                    Browse Tools <Icon name="chevron-right" className="w-3 h-3" />
-                                                </div>
+                                                <div className="text-emerald-600 font-bold text-[10px] uppercase tracking-widest">Browse Tools</div>
                                             </div>
                                         ))}
                                     </div>
