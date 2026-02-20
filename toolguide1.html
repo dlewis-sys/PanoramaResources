@@ -20,7 +20,6 @@
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
         
-        /* Pre-defined sizes for icons to prevent them flickering on load */
         [data-lucide] {
             display: inline-block;
             width: 1.25rem;
@@ -40,7 +39,6 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Loading Screen Styles */
         #loader {
             display: flex;
             flex-direction: column;
@@ -63,21 +61,47 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        /* The small square "tile" copy button */
+        .copy-tile {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 22px;
+            height: 22px;
+            border-radius: 4px;
+            background-color: #f1f5f9; /* slate-100 */
+            border: 1px solid #e2e8f0; /* slate-200 */
+            color: #94a3b8; /* slate-400 */
+            transition: all 0.2s ease;
+            cursor: pointer;
+            flex-shrink: 0;
+            margin-left: 10px; /* Added spacing from text */
+        }
+        .copy-tile:hover {
+            background-color: #e2e8f0;
+            color: #64748b;
+        }
+        .copy-tile.success {
+            background-color: #ecfdf5; /* emerald-50 */
+            border-color: #10b981; /* emerald-500 */
+            color: #10b981;
+        }
     </style>
 </head>
 <body class="bg-white text-slate-900">
-    <!-- Initial Loading UI: This is what prevents the "Blank Screen" on GitHub -->
+    <!-- Initial Loading UI -->
     <div id="root">
         <div id="loader">
             <div class="spinner"></div>
             <p style="font-weight: 600;">Initializing Solara Tool Guide...</p>
-            <p style="font-size: 0.8rem; color: #64748b; margin-top: 0.5rem;">Processing scripts (this may take a moment)...</p>
+            <p style="font-size: 0.8rem; color: #64748b; margin-top: 0.5rem;">Processing complete library...</p>
         </div>
     </div>
 
-    <!-- The Script: The "Brain" of your application -->
+    <!-- Script Block -->
     <script type="text/babel" data-type="module">
-        const { useState, useEffect, useMemo } = React;
+        const { useState, useEffect, useMemo, useRef } = React;
         
         // --- FIREBASE IMPORTS ---
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -97,16 +121,27 @@
 
         // --- ICON COMPONENT ---
         const Icon = ({ name, style, className = "w-5 h-5" }) => {
-            return <i data-lucide={name} style={style} className={`${className} inline-block`}></i>;
+            const iconRef = useRef(null);
+            
+            useEffect(() => {
+                if (window.lucide && iconRef.current) {
+                    window.lucide.createIcons({
+                        attrs: { class: className },
+                        nameAttr: 'data-lucide',
+                        icons: { [name]: window.lucide.icons[name] }
+                    });
+                }
+            }, [name, className]);
+
+            return <i ref={iconRef} data-lucide={name} style={style} className={`${className} inline-block`}></i>;
         };
 
         // --- FIREBASE CONFIG & INIT ---
         let firebaseConfig = {};
         try {
-            // Safe check for the config variable
             firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
         } catch (e) {
-            console.warn("Firebase config not found. App will run in static mode.");
+            console.warn("Firebase config not found.");
         }
 
         const app = firebaseConfig.apiKey ? initializeApp(firebaseConfig) : null;
@@ -116,11 +151,9 @@
 
         // --- AI LOGIC ---
         const callGemini = async (userQuery, retryCount = 0) => {
-            if (!apiKey) {
-                throw new Error("Missing Gemini API Key. Add your key to the script to use the Assistant.");
-            }
+            if (!apiKey) throw new Error("Missing Gemini API Key.");
             const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
-            const systemPrompt = `You are the Solara Custom Tool Assistant. Help educators design precise Custom Tools. Output must be a valid JSON object. Instructions must be PLAIN TEXT.`;
+            const systemPrompt = `You are the Solara Custom Tool Assistant. Help educators design precise Custom Tools. Instructions must be PLAIN TEXT.`;
             const payload = {
                 contents: [{ parts: [{ text: `Educator Need: ${userQuery}` }] }],
                 systemInstruction: { parts: [{ text: systemPrompt }] },
@@ -158,11 +191,11 @@
             }
         };
 
-        // --- FULL LIBRARY DATA ---
+        // --- FULL LIBRARY DATA (37 TOOLS) ---
         const APP_DATA = {
             mtss: {
                 id: 'mtss',
-                title: "MTSS and Student Support Tools",
+                title: "MTSS Tools",
                 shortTitle: "MTSS Tools",
                 icon: <Icon name="users" style={{ color: PANO_GREEN }} />,
                 accent: SECONDARY_TURQUOISE,
@@ -172,16 +205,195 @@
                     {
                         title: "SMART Goal Generator",
                         category: "Student Support",
-                        description: "Helps teachers create intervention-aligned SMART goals based on student data.",
-                        prompt: "Create a SMART goal for a student in the K–12 setting that is Specific, Measurable, Achievable, Relevant, and Time-bound.",
-                        fields: ["Perceived need", "Domain", "Tier of support", "Timeframe"]
+                        description: "Helps teachers create intervention-aligned SMART goals based on student data and district expectations.",
+                        prompt: "Create a SMART goal for a student in the K–12 setting that is Specific, Measurable, Achievable, Relevant, and Time-bound, ensuring alignment with the student's current academic or behavioral need, their tier of support in an MTSS framework, and the targeted domain. Format the output as a SMART Goal Statement, Criteria for Measurement, and Timeline for Achievement. Ensure the goal is asset-based and strengths-oriented.",
+                        knowledge: ["SMART goal exemplars", "District goal-setting guidance", "MTSS tiered intervention libraries"],
+                        fields: ["Perceived need", "Domain (e.g., literacy, behavior)", "Tier of support", "Desired outcome timeframe"]
                     },
                     {
                         title: "MTSS Meeting Agenda Creator",
                         category: "Student Support",
-                        description: "Creates a structured agenda for school-based MTSS meetings.",
-                        prompt: "Generate a detailed MTSS meeting agenda for a Tier 2/3 team working in a K–12 setting.",
-                        fields: ["Meeting type", "Students to discuss", "Duration"]
+                        description: "Creates a structured agenda for school-based MTSS meetings, including discussion topics and student updates.",
+                        prompt: "Generate a detailed MTSS meeting agenda for a Tier 2/3 team working in a K–12 setting. Include Agenda Sections with recommended time allocations, Key Discussion Items for both academic and behavioral supports, Student Update Format, Facilitator Prompts, and Action Items Section. Present the agenda in a professional format for a 45–60 minute meeting.",
+                        knowledge: ["MTSS meeting protocols", "Role-specific responsibilities"],
+                        fields: ["Meeting type (Tier 2 or Tier 3)", "List of students to discuss", "Meeting duration"]
+                    },
+                    {
+                        title: "Individualized Behavior Plan Assistant",
+                        category: "Student Support",
+                        description: "Generates detailed, asset-based behavior intervention plans for students needing additional support.",
+                        prompt: "Draft a student-centered, asset-based behavior intervention plan for a K–12 student. Structure into sections: Student Strengths & Interests, Identified Behavioral Need, Specific Behavioral Goals (SMART), Intervention Strategies, Progress Monitoring Plan, and Family/Community Involvement strategies.",
+                        knowledge: ["District BIP templates", "FBA/BIP frameworks", "PBIS strategies"],
+                        fields: ["Target behavior", "Strengths/interests", "Triggers/antecedents", "Desired replacement behavior"]
+                    },
+                    {
+                        title: "Student of Concern Form Generator",
+                        category: "Student Support",
+                        description: "Complete a Student of Concern Form for MTSS documentation across all 5 pages.",
+                        prompt: "Complete the Student of Concern Form for the selected student. Complete each page (all 5 pages) of the form and keep the original structure. Analyze performance trends in academics, behavior, and attendance. Recommend tiered interventions based on data. Include a File Review table on the last page with current grades and assessment data.",
+                        knowledge: ["Template Student of Concern Form"],
+                        fields: ["Relevant data points for concern", "Primary areas for goal-setting"]
+                    },
+                    {
+                        title: "Student-Based Support Team Report Creator",
+                        category: "Student Support",
+                        description: "Generate a comprehensive student report for SBST meetings including attendance, behavior, and academic data.",
+                        prompt: "Generate a detailed report using student Panorama data to support intervention planning. Components Required: 1. Attendance Analysis; 2. Behavior and Discipline Review; 3. Academic Performance Summary; 4. Data Trends and Patterns; 5. Key Findings and Recommendations.",
+                        knowledge: ["SBST Report Template", "District intervention benchmarks"],
+                        fields: ["Reporting period", "Specific SBST Focus Area"]
+                    }
+                ]
+            },
+            instruction: {
+                id: 'instruction',
+                title: "Curriculum Tools",
+                shortTitle: "Curriculum Tools",
+                icon: <Icon name="book-open" style={{ color: PANO_GREEN }} />,
+                accent: SECONDARY_TEAL,
+                description: "Lesson planning, curriculum development, and instructional strategies.",
+                summary: "Lesson planning, curriculum development, and instructional strategies.",
+                tools: [
+                    {
+                        title: "Lesson Re-Teach Plan Generator",
+                        category: "Instructional Planning",
+                        description: "Supports teachers in creating re-teach plans for students who struggled with specific concepts.",
+                        prompt: "Design a re-teach plan for a K–12 lesson. Include learning objective, summary of original lesson, evidence of gaps, instructional adjustments, scaffolded activities, and formative assessment methods.",
+                        knowledge: ["State/district standards", "Curriculum scope and sequence"],
+                        fields: ["Concept needing re-teach", "Common errors", "Instructional format"]
+                    },
+                    {
+                        title: "Rubric Generator",
+                        category: "Instructional Planning",
+                        description: "Builds grading rubrics aligned to standards, success criteria, and assignment goals.",
+                        prompt: "Generate a detailed rubric for a K–12 assignment. Include four performance levels with clear, observable descriptors. Ensure descriptors are objective and measurable.",
+                        knowledge: ["Standards-aligned rubric examples", "District grading policies"],
+                        fields: ["Assignment description", "Learning objectives", "Success criteria"]
+                    },
+                    {
+                        title: "UDL Strategy Generator",
+                        category: "Instructional Planning",
+                        description: "Suggests UDL-aligned strategies to differentiate lessons based on student needs.",
+                        prompt: "Recommend Universal Design for Learning strategies across all three principles: representation, engagement, and action/expression. Align each strategy to the lesson objective.",
+                        knowledge: ["UDL framework"],
+                        fields: ["Lesson goal or activity", "Known learner needs", "Available materials"]
+                    },
+                    {
+                        title: "DOK Questions",
+                        category: "Instructional Planning",
+                        description: "Analyzes uploaded reading passages and crafts Depth of Knowledge (DOK) questions.",
+                        prompt: "Analyze uploaded documents and generate depth of knowledge questions across all four levels (DOK 1–4). For every question, list the target cognitive skill and suggested response type.",
+                        knowledge: ["Reading passages", "Articles", "DOK Framework Guide"],
+                        fields: ["Target Grade Level", "Subject Area"]
+                    },
+                    {
+                        title: "Text Re-Leveler",
+                        category: "Instructional Planning",
+                        description: "Adapts grade-level texts to increase accessibility while preserving core meaning.",
+                        prompt: "Adapt complex grade-level texts. Provide: 1. A simplified version; 2. Strategic scaffolds (context clues/definitions); 3. Logical 'chunks' with guiding questions.",
+                        knowledge: ["Lexile/Grade-level frameworks", "Vocabulary tier guides"],
+                        fields: ["Target Grade Level", "Focus Vocabulary to Retain"]
+                    }
+                ]
+            },
+            career: {
+                id: 'career',
+                title: "College & Career Tools",
+                shortTitle: "CCR Tools",
+                icon: <Icon name="graduation-cap" style={{ color: PANO_GREEN }} />,
+                accent: SECONDARY_LIME,
+                description: "Preparing students for post-secondary success and career planning.",
+                summary: "Preparing students for post-secondary success and career planning.",
+                tools: [
+                    {
+                        title: "Career Pathway Exploration Tool",
+                        category: "Student Engagement",
+                        description: "Matches students with potential career pathways based on interests and academic profiles.",
+                        prompt: "Recommend career pathways for a K–12 student based on interests and strengths. Align to recognized career cluster frameworks. Include rationale, potential occupations, and postsecondary certifications.",
+                        knowledge: ["Career interest inventories", "State career clusters"],
+                        fields: ["Student interests", "Strengths/skills", "Preferred working style"]
+                    },
+                    {
+                        title: "College Exploration Generator",
+                        category: "Student Engagement",
+                        description: "Provides a tailored list of postsecondary institutions based on student preferences.",
+                        prompt: "Create a list of best-fit colleges or trade schools considering academic profile, preferred location, environment, and financial considerations. Include brief descriptions for each.",
+                        knowledge: ["College match criteria", "FAFSA info"],
+                        fields: ["Location preferences", "Career interests", "School type preferences"]
+                    },
+                    {
+                        title: "Letter of Recommendation Generator",
+                        category: "Student Engagement",
+                        description: "Drafts personalized letters of recommendation for college or internships.",
+                        prompt: "Write a formal letter of recommendation highlighting academic achievements, leadership, and unique contributions. Include specific anecdotes and maintain a professional tone.",
+                        knowledge: ["Exemplars of effective recommendation letters"],
+                        fields: ["Relationship to recommender", "Academic and personal strengths", "Target program"]
+                    },
+                    {
+                        title: "PoG Improvement Plan",
+                        category: "Student Support",
+                        description: "Creates a 12-week improvement plan for Portrait of a Graduate (PoG) competencies.",
+                        prompt: "Create a detailed 12-week improvement plan focused on core PoG competencies. Include actionable interventions, weekly tracking mechanisms, and milestone checks.",
+                        knowledge: ["PoG competencies", "Intervention strategies guide"],
+                        fields: ["Target Competency (e.g., Communication)", "Current Performance Baseline"]
+                    },
+                    {
+                        title: "CTE Meeting Agenda Planner",
+                        category: "Instructional Planning",
+                        description: "Generate personalized meeting agendas for CTE pathway planning.",
+                        prompt: "Generate a structured agenda that covers: 1. Pathway progress; 2. Industry certification alignment; 3. Course selection; 4. Work-based learning opportunities. Provide talking points.",
+                        knowledge: ["CTE Pathway course sequences", "Certification requirements"],
+                        fields: ["Student Career Interests", "Completed CTE Credits"]
+                    }
+                ]
+            },
+            specialed: {
+                id: 'specialed',
+                title: "Special Education Tools",
+                shortTitle: "SPED Tools",
+                icon: <Icon name="target" style={{ color: PANO_GREEN }} />,
+                accent: SECONDARY_LAVENDER,
+                description: "Documentation, goal setting, and personalized support for students with diverse needs.",
+                summary: "Documentation, goal setting, and personalized support for students with diverse needs.",
+                tools: [
+                    {
+                        title: "IEP Goal Writer",
+                        category: "Student Support",
+                        description: "Generates clear, standards-aligned, and measurable IEP goals.",
+                        prompt: "Generate a measurable, standards-aligned IEP goal. Use SMART formatting, align to state standards, and include criteria for mastery and method of measurement.",
+                        knowledge: ["State standards", "IEP compliance guidance"],
+                        fields: ["Area of focus", "Timeframe", "Desired outcome"]
+                    },
+                    {
+                        title: "FBA Assistant",
+                        category: "Student Support",
+                        description: "Analyzes behavior data to identify patterns and hypothesize root causes.",
+                        prompt: "Analyze behavior data to determine hypothesized root causes. Draft function-based statements identifying the purpose: Escape, Attention, Tangible, or Sensory.",
+                        knowledge: ["Behavior observation logs", "ABC data sheets"],
+                        fields: ["Specific target behavior", "Observed triggers", "Perceived function"]
+                    },
+                    {
+                        title: "BIP Draft Generator",
+                        category: "Student Support",
+                        description: "Creates structured, function-aligned behavior intervention plans.",
+                        prompt: "Generate a structured BIP that aligns with the behavioral function. Include proactive supports, replacement behavior instruction, and data-driven monitoring strategies.",
+                        knowledge: ["Completed FBA", "PBIS Strategy Guide"],
+                        fields: ["Hypothesized behavior function", "Targeted replacement behavior"]
+                    },
+                    {
+                        title: "Parent SPED Summary",
+                        category: "Student Support",
+                        description: "Translates technical evaluation results into family-friendly language.",
+                        prompt: "Translate complex student evaluation results and IEP service plans into clear, family-friendly language focusing on student strengths to promote partnership.",
+                        knowledge: ["Evaluation reports (ER/RR)", "Current IEP"],
+                        fields: ["Primary evaluation findings", "Key service areas"]
+                    },
+                    {
+                        title: "IEP at a Glance Generator",
+                        category: "Student Support",
+                        description: "Generates a concise summary of a student’s IEP for classroom implementation.",
+                        prompt: "Generate an IEP at a Glance summary. Include sections for eligibility, annual goals, accommodations/modifications, and relevant support services. Keep it focused on actionable information.",
+                        knowledge: ["IEP Template"],
+                        fields: ["Student name", "Key accommodations", "Primary goals"]
                     }
                 ]
             },
@@ -198,122 +410,39 @@
                         title: "Attendance Contract Generator",
                         category: "Student Support",
                         description: "Drafts personalized attendance improvement contracts.",
-                        prompt: "Generate a student-centered attendance contract that is collaborative and solution-oriented.",
-                        fields: ["Identified barriers", "Family preferences", "Support strategies"]
-                    }
-                ]
-            },
-            instruction: {
-                id: 'instruction',
-                title: "Instruction and Curriculum Tools",
-                shortTitle: "Curriculum Tools",
-                icon: <Icon name="book-open" style={{ color: PANO_GREEN }} />,
-                accent: SECONDARY_TEAL,
-                description: "Lesson planning, curriculum development, and instructional strategies.",
-                summary: "Lesson planning, curriculum development, and instructional strategies.",
-                tools: [
+                        prompt: "Generate a student-centered attendance contract. Include clear expectations, support strategies, shared commitments, and check-in dates. Use positive, non-punitive language.",
+                        knowledge: ["District attendance contract templates"],
+                        fields: ["Identified barriers", "Suggested support strategies", "Contract timeframe"]
+                    },
                     {
-                        title: "Text Re-Leveler",
-                        category: "Instructional Planning",
-                        description: "Adapts grade-level texts to increase accessibility through vocabulary support.",
-                        prompt: "Adapt complex grade-level texts to make them more accessible for diverse learners without compromising rigor.",
-                        fields: ["Target Grade Level", "Focus Vocabulary", "Chunking Preference"]
-                    }
-                ]
-            },
-            career: {
-                id: 'career',
-                title: "College and Career Readiness Tools",
-                shortTitle: "CCR Tools",
-                icon: <Icon name="graduation-cap" style={{ color: PANO_GREEN }} />,
-                accent: SECONDARY_LIME,
-                description: "Preparing students for post-secondary success and career planning.",
-                summary: "Preparing students for post-secondary success and career planning.",
-                tools: [
+                        title: "Attendance Data Summary Tool",
+                        category: "Student Support",
+                        description: "Summarizes patterns in attendance data highlighting trends and risk areas.",
+                        prompt: "Summarize attendance trends and risk factors. Include rate, patterns (chronic absenteeism/tardies), equity considerations, and actionable next steps.",
+                        knowledge: ["Local risk definitions"],
+                        fields: ["Time period"]
+                    },
                     {
-                        title: "Letter of Recommendation Generator",
+                        title: "Attendance Celebration Note",
                         category: "Student Engagement",
-                        description: "Drafts personalized letters of recommendation for college or internships.",
-                        prompt: "Write a formal letter of recommendation highlighting academic achievements and personal strengths.",
-                        fields: ["Relationship", "Strengths", "Key accomplishments", "Target program"]
-                    }
-                ]
-            },
-            family: {
-                id: 'family',
-                title: "Family Engagement Tools",
-                shortTitle: "Family Engagement",
-                icon: <Icon name="heart" style={{ color: PANO_GREEN }} />,
-                accent: SECONDARY_LAVENDER,
-                description: "Building stronger connections between families, students, and schools.",
-                summary: "Building stronger connections between families, students, and schools.",
-                tools: [
+                        description: "Automatically generates positive notes or certificates for improving attendance.",
+                        prompt: "Create a personalized celebration note recognizing attendance improvement. Use a warm, encouraging tone. Reference specific progress like days attended or improvement percentage.",
+                        knowledge: ["School values"],
+                        fields: ["Attendance progress or milestone", "Preferred tone"]
+                    },
                     {
-                        title: "Family Update Generator",
-                        category: "Family Engagement",
-                        description: "Drafts regular, personalized updates to families about student progress.",
-                        prompt: "Create a biweekly family update summarizing academic progress, strengths, and next steps.",
-                        fields: ["Highlights", "Areas for growth", "Home support suggestions"]
+                        title: "Attendance Team Meeting Prep",
+                        category: "Student Support",
+                        description: "Prepares a summary for weekly attendance team meetings.",
+                        prompt: "Create a meeting prep sheet summarizing concerns and action steps. Include student information table, key factors (transportation/health), and recommended next steps.",
+                        knowledge: ["Attendance team meeting structure"],
+                        fields: ["Meeting date", "Students of concern"]
                     }
                 ]
             },
             assessment: {
                 id: 'assessment',
-                title: "Professional Learning and Staff Support Tools",
-                shortTitle: "PL and Staff Support",
-                icon: <Icon name="brain" style={{ color: PANO_GREEN }} />,
-                accent: SECONDARY_TURQUOISE,
-                description: "Educator development, training, and professional growth support.",
-                summary: "Educator development, training, and professional growth support.",
-                tools: [
-                    {
-                        title: "PD Session Designer",
-                        category: "Instructional Planning",
-                        description: "Helps coaches quickly create agendas and slide outlines for PD sessions.",
-                        prompt: "Design a detailed 60-minute PD session agenda aligned to adult learning principles.",
-                        fields: ["Topic", "Audience", "Length", "Desired Outcomes"]
-                    }
-                ]
-            },
-            planning: {
-                id: 'planning',
-                title: "School and District Planning Tools",
-                shortTitle: "District Planning",
-                icon: <Icon name="school" style={{ color: PANO_GREEN }} />,
-                accent: SECONDARY_TEAL,
-                description: "Efficiently develop, align, and document strategic and compliance plans.",
-                summary: "Efficiently develop, align, and document strategic and compliance plans.",
-                tools: [
-                    {
-                        title: "SIP Builder",
-                        category: "Instructional Planning",
-                        description: "Supports administrators in generating School Improvement Plans.",
-                        prompt: "Create a draft school improvement plan including needs assessment, priority goals, and action steps.",
-                        fields: ["Priority areas", "Stakeholder input", "Timeline"]
-                    }
-                ]
-            },
-            specialed: {
-                id: 'specialed',
-                title: "Special Education and 504 Planning Tools",
-                shortTitle: "SPED Tools",
-                icon: <Icon name="target" style={{ color: PANO_GREEN }} />,
-                accent: SECONDARY_LAVENDER,
-                description: "Documentation, goal setting, and personalized support for students with diverse needs.",
-                summary: "Documentation, goal setting, and personalized support for students with diverse needs.",
-                tools: [
-                    {
-                        title: "IEP Goal Writer",
-                        category: "Student Support",
-                        description: "Generates clear, standards-aligned, and measurable IEP goals.",
-                        prompt: "Generate a measurable, standards-aligned IEP goal based on current performance.",
-                        fields: ["Area of focus", "Timeframe", "Desired outcome"]
-                    }
-                ]
-            },
-            datatools: {
-                id: 'datatools',
-                title: "Assessment and Data Tools",
+                title: "Assessment Tools",
                 shortTitle: "Assessment Tools",
                 icon: <Icon name="bar-chart" style={{ color: PANO_GREEN }} />,
                 accent: SECONDARY_TURQUOISE,
@@ -323,9 +452,139 @@
                     {
                         title: "Assessment Data Analyzer",
                         category: "Instructional Planning",
-                        description: "Analyzes assessment results to identify learning gaps and student groupings.",
-                        prompt: "Analyze assessment data for a K–12 class to identify learning gaps and suggest flexible groupings.",
-                        fields: ["Assessment type", "Grade level", "Benchmarks"]
+                        description: "Analyzes assessment results to identify learning gaps and groupings.",
+                        prompt: "Analyze assessment data for a K–12 class. Organize into sections: learning gaps by standard, suggested groupings with rationale, and recommended strategies.",
+                        knowledge: ["District assessment frameworks"],
+                        fields: ["Assessment type", "Performance benchmarks"]
+                    },
+                    {
+                        title: "Dashboard Summary Creator",
+                        category: "Instructional Planning",
+                        description: "Creates executive summaries of dashboard trends for leadership meetings.",
+                        prompt: "Generate an executive summary of performance trends. Include academic performance, attendance, behavior, and equity indicators with 2–3 actionable recommendations.",
+                        knowledge: ["District KPIs", "Historical trend data"],
+                        fields: ["Time period", "Audience level", "Priority metrics"]
+                    },
+                    {
+                        title: "Student Progress Report Generator",
+                        category: "Family Engagement",
+                        description: "Compiles individual student progress reports synthesizing multiple data points.",
+                        prompt: "Create a comprehensive progress report combining academic, behavioral, and attendance data into a family-friendly summary. Use clear, jargon-free language.",
+                        knowledge: ["Report card templates"],
+                        fields: ["Reporting period", "Data sources to include", "Student strengths"]
+                    },
+                    {
+                        title: "Benchmark Prep Tool",
+                        category: "Instructional Planning",
+                        description: "Identifies focus areas and review materials based on prior performance.",
+                        prompt: "Design a targeted review plan for an upcoming benchmark assessment. Include prioritized content areas, suggested activities, time allocations, and differentiation strategies.",
+                        knowledge: ["Assessment blueprints", "Review strategy best practices"],
+                        fields: ["Assessment date", "Previous performance data"]
+                    }
+                ]
+            },
+            family: {
+                id: 'family',
+                title: "Family Engagement",
+                shortTitle: "Family Engagement",
+                icon: <Icon name="heart" style={{ color: PANO_GREEN }} />,
+                accent: SECONDARY_LAVENDER,
+                description: "Building stronger connections between families, students, and schools.",
+                summary: "Building stronger connections between families, students, and schools.",
+                tools: [
+                    {
+                        title: "Conference Prep Tool",
+                        category: "Family Engagement",
+                        description: "Summarizes strengths and growth areas to prepare for effective conferences.",
+                        prompt: "Generate a parent-teacher conference preparation sheet using asset-based, jargon-free language. Include sections for strengths, supportive concerns, and progress toward goals.",
+                        knowledge: ["Family communication best practices"],
+                        fields: ["Conference length", "Strengths/interests"]
+                    },
+                    {
+                        title: "Family Update Generator",
+                        category: "Family Engagement",
+                        description: "Drafts regular, personalized updates to families about student progress.",
+                        prompt: "Create a friendly biweekly family update summarizing progress. Include short sections for highlights, current focus, and home support tips.",
+                        knowledge: ["Family communication guidelines"],
+                        fields: ["Highlights", "Areas for growth", "Upcoming deadlines"]
+                    },
+                    {
+                        title: "Event Invitation Writer",
+                        category: "Family Engagement",
+                        description: "Drafts inclusive invitations to upcoming school events.",
+                        prompt: "Write an invitation for a school family event. Include purpose, activities, and logistical supports like translation or childcare. Use welcoming, inclusive language.",
+                        knowledge: ["Event communication templates"],
+                        fields: ["Event details", "Audience", "Purpose"]
+                    }
+                ]
+            },
+            staff: {
+                id: 'staff',
+                title: "PL & Staff Support",
+                shortTitle: "Staff Support",
+                icon: <Icon name="brain" style={{ color: PANO_GREEN }} />,
+                accent: SECONDARY_TURQUOISE,
+                description: "Educator development, training, and professional growth support.",
+                summary: "Educator development, training, and professional growth support.",
+                tools: [
+                    {
+                        title: "PD Session Designer",
+                        category: "Instructional Planning",
+                        description: "Helps coaches quickly create agendas and slides for professional development sessions.",
+                        prompt: "Design a 60-minute PD session agenda. Include objectives, minute-by-minute plan, interactive activities, and reflection prompts balanced with research-based content.",
+                        knowledge: ["Adult Learning Theory", "District Priorities"],
+                        fields: ["Topic", "Audience", "Length", "Desired Outcomes"]
+                    },
+                    {
+                        title: "Teacher Goal Reflection Tool",
+                        category: "Instructional Planning",
+                        description: "Supports educators in reflecting on progress toward professional goals.",
+                        prompt: "Write a reflection summary on professional progress. Include evidence, strengths observed, challenges, and next steps aligned with coaching frameworks.",
+                        knowledge: ["Teacher evaluation rubrics"],
+                        fields: ["Goal statement", "Progress notes", "Timeframe"]
+                    },
+                    {
+                        title: "Coaching Cycle Summary",
+                        category: "Instructional Planning",
+                        description: "Drafts a summary of an instructional coaching conversation or cycle.",
+                        prompt: "Summarize an instructional coaching cycle. Include the focus area, implementing strategies, evidence of progress, and actionable next steps.",
+                        knowledge: ["Instructional coaching models"],
+                        fields: ["Focus area", "Observed strengths", "Coaching frequency"]
+                    }
+                ]
+            },
+            planning: {
+                id: 'planning',
+                title: "District Planning",
+                shortTitle: "District Planning",
+                icon: <Icon name="school" style={{ color: PANO_GREEN }} />,
+                accent: SECONDARY_TEAL,
+                description: "Efficiently develop, align, and document strategic and compliance plans.",
+                summary: "Efficiently develop, align, and document strategic and compliance plans.",
+                tools: [
+                    {
+                        title: "SIP Builder",
+                        category: "Instructional Planning",
+                        description: "Supports administrators in generating School Improvement Plans based on data.",
+                        prompt: "Create a draft school improvement plan including a profile, needs assessment, priority goals, and alignment to district priorities using clear, professional language.",
+                        knowledge: ["SIP templates", "State requirements"],
+                        fields: ["Priority areas", "Stakeholder input", "Timeline"]
+                    },
+                    {
+                        title: "Strategic Planning Snapshot",
+                        category: "Instructional Planning",
+                        description: "Creates a one-pager synthesizing districtwide data and priorities.",
+                        prompt: "Generate a one-page strategic planning snapshot. Include overview of student achievement, equity indicators, and graduation rates followed by strategic priorities.",
+                        knowledge: ["District vision statements"],
+                        fields: ["Audience", "Key priorities"]
+                    },
+                    {
+                        title: "Grant Narrative Starter",
+                        category: "Instructional Planning",
+                        description: "Generates draft narratives for common grant applications.",
+                        prompt: "Draft a persuasive grant narrative including needs statement, proposed strategy, expected outcomes, and alignment to goals using compelling strengths-based language.",
+                        knowledge: ["Common grant structures"],
+                        fields: ["Project description", "Needs statement", "Desired outcomes"]
                     }
                 ]
             }
@@ -345,6 +604,7 @@
 
             const toolId = `${categoryId}-${index}`;
             const fields = tool.fields || tool.recommendedFields || [];
+            const knowledge = tool.knowledge || [];
 
             return (
                 <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 mb-4 animate-in">
@@ -354,46 +614,115 @@
                     >
                         <div className="flex-1">
                             <div className="flex items-center gap-3 mb-1">
-                                <h3 className="text-xl font-bold text-slate-900">{tool.title}</h3>
+                                <div className="flex items-center group/title">
+                                    <h3 className="text-xl font-bold text-slate-900 leading-tight">{tool.title}</h3>
+                                    {isExpanded && (
+                                        <button 
+                                            onClick={(e) => { e.stopPropagation(); triggerCopy(tool.title, `${toolId}-title`); }}
+                                            className={`copy-tile ${copyFeedback === `${toolId}-title` ? 'success' : ''}`}
+                                            title="Copy Title"
+                                        >
+                                            <Icon name={copyFeedback === `${toolId}-title` ? "check" : "copy"} className="w-3.5 h-3.5" />
+                                        </button>
+                                    )}
+                                </div>
                                 {isExpanded && onDelete && (
                                     <button 
                                         onClick={(e) => { e.stopPropagation(); onDelete(); }} 
-                                        className="text-rose-400 hover:text-rose-600 p-1 rounded-lg hover:bg-rose-50 transition-colors"
+                                        className="text-rose-400 hover:text-rose-600 p-1 rounded-lg hover:bg-rose-50 transition-colors ml-2"
                                     >
                                         <Icon name="trash-2" className="w-4 h-4" />
                                     </button>
                                 )}
                             </div>
-                            <p className="text-sm text-slate-500 line-clamp-1">{tool.description}</p>
+                            <div className="flex items-center group/desc">
+                                <p className="text-sm text-slate-500 line-clamp-1">{tool.description}</p>
+                                {isExpanded && (
+                                    <button 
+                                        onClick={(e) => { e.stopPropagation(); triggerCopy(tool.description, `${toolId}-desc`); }}
+                                        className={`copy-tile ${copyFeedback === `${toolId}-desc` ? 'success' : ''}`}
+                                        title="Copy Description"
+                                    >
+                                        <Icon name={copyFeedback === `${toolId}-desc` ? "check" : "copy"} className="w-3 h-3" />
+                                    </button>
+                                )}
+                            </div>
                         </div>
-                        <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-4 flex-shrink-0">
                             <div className="px-3 py-1 rounded-full bg-slate-100 text-[10px] font-bold text-slate-500 uppercase tracking-wider">{tool.category || "General"}</div>
                             <Icon name="chevron-down" className={`w-5 h-5 text-slate-300 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
                         </div>
                     </div>
 
                     {isExpanded && (
-                        <div className="p-6 border-t border-slate-100 bg-slate-50/30 grid grid-cols-1 lg:grid-cols-2 gap-8 animate-in">
-                            <div className="space-y-4">
+                        <div className="p-6 border-t border-slate-100 bg-slate-50/30 animate-in">
+                            <div className="mb-8 space-y-4">
                                 <div className="flex items-center justify-between">
-                                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-1.5"><Icon name="file-text" className="w-3 h-3" /> Instructions</label>
+                                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-1.5">
+                                        <Icon name="file-text" className="w-3 h-3" /> Tool Instructions
+                                    </label>
                                     <button 
                                         onClick={() => triggerCopy(tool.prompt || tool.instructions, `${toolId}-p`)}
-                                        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${copyFeedback === `${toolId}-p` ? 'bg-emerald-500 text-white' : 'bg-slate-200 text-slate-600 hover:bg-slate-300'}`}
+                                        className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all shadow-sm ${copyFeedback === `${toolId}-p` ? 'bg-emerald-500 text-white' : 'bg-blue-600 text-white hover:bg-blue-700 active:scale-95'}`}
                                     >
-                                        <Icon name={copyFeedback === `${toolId}-p` ? "check" : "copy"} className="w-3 h-3" /> {copyFeedback === `${toolId}-p` ? 'Copied' : 'Copy'}
+                                        <Icon name={copyFeedback === `${toolId}-p` ? "check" : "copy"} className="w-3.5 h-3.5" /> 
+                                        {copyFeedback === `${toolId}-p` ? 'Copied' : 'Copy Instructions'}
                                     </button>
                                 </div>
-                                <div className="p-4 rounded-xl border border-slate-200 bg-white italic text-[13px] text-slate-700 whitespace-pre-wrap leading-relaxed">"{tool.prompt || tool.instructions}"</div>
+                                <div className="p-5 rounded-xl border border-slate-200 bg-white italic text-[14px] text-slate-700 whitespace-pre-wrap leading-relaxed border-l-4" style={{borderLeftColor: PANO_GREEN}}>
+                                    "{tool.prompt || tool.instructions}"
+                                </div>
                             </div>
-                            <div>
-                                <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 block mb-3">Recommended Context Fields</label>
-                                <div className="flex flex-wrap gap-2">
-                                    {fields.length > 0 ? fields.map((f, i) => (
-                                        <div key={i} className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-600 shadow-sm font-medium">
-                                            {typeof f === 'string' ? f : f.fieldName}
+
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                                <div className="space-y-8">
+                                    <div>
+                                        <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 block mb-3 flex items-center gap-1.5">
+                                            <Icon name="tag" className="w-3 h-3" /> Tool Category
+                                        </label>
+                                        <div className="inline-block px-3 py-1.5 bg-[#161242] text-white rounded text-[10px] font-bold shadow-sm">
+                                            {tool.category || "General"}
                                         </div>
-                                    )) : <span className="text-xs text-slate-400">No specific fields recommended.</span>}
+                                    </div>
+
+                                    <div>
+                                        <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 block mb-3 flex items-center gap-1.5">
+                                            <Icon name="book-open" className="w-3 h-3" /> Recommended Files to Upload
+                                        </label>
+                                        <ul className="space-y-2">
+                                            {knowledge.length > 0 ? knowledge.map((k, i) => (
+                                                <li key={i} className="flex items-center group/item">
+                                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" />
+                                                    <div className="text-xs text-slate-600 ml-2">{k}</div>
+                                                    {/* No copy button here as requested */}
+                                                </li>
+                                            )) : <li className="text-xs text-slate-400 italic">None recommended.</li>}
+                                        </ul>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="text-[10px] font-bold uppercase tracking-widest text-emerald-600 block mb-3 flex items-center gap-1.5">
+                                        <Icon name="trending-up" className="w-3 h-3" /> Recommended Text Fields
+                                    </label>
+                                    <ul className="space-y-2">
+                                        {fields.length > 0 ? fields.map((f, i) => {
+                                            const fieldVal = typeof f === 'string' ? f : f.fieldName;
+                                            return (
+                                                <li key={i} className="flex items-center group/item">
+                                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" />
+                                                    <div className="text-xs text-slate-600 ml-2">{fieldVal}</div>
+                                                    <button 
+                                                        onClick={(e) => { e.stopPropagation(); triggerCopy(fieldVal, `${toolId}-f-${i}`); }}
+                                                        className={`copy-tile ${copyFeedback === `${toolId}-f-${i}` ? 'success' : ''}`}
+                                                        title="Copy Field"
+                                                    >
+                                                        <Icon name={copyFeedback === `${toolId}-f-${i}` ? "check" : "copy"} className="w-3.5 h-3.5" />
+                                                    </button>
+                                                </li>
+                                            );
+                                        }) : <li className="text-xs text-slate-400 italic">None specified.</li>}
+                                    </ul>
                                 </div>
                             </div>
                         </div>
@@ -413,12 +742,10 @@
             const [builderLoading, setBuilderLoading] = useState(false);
             const [aiDraft, setAiDraft] = useState(null);
 
-            // Re-run Lucide on every render to catch dynamic elements
             useEffect(() => {
                 if (window.lucide) window.lucide.createIcons();
             });
 
-            // Authentication logic
             useEffect(() => {
                 if (!auth) return;
                 const unsub = onAuthStateChanged(auth, setUser);
@@ -433,7 +760,6 @@
                 return () => unsub();
             }, []);
 
-            // Data listener
             useEffect(() => {
                 if (!user || !db) return;
                 const q = collection(db, 'artifacts', appId, 'users', user.uid, 'drafts');
@@ -451,7 +777,7 @@
 
             const handleSave = async (t) => {
                 if (!db || !user) {
-                    alert("Persistence unavailable in preview. Add your Firebase config to save.");
+                    alert("Persistence unavailable.");
                     return;
                 }
                 await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'drafts'), { ...t, createdAt: serverTimestamp() });
@@ -468,7 +794,7 @@
                 } finally { setBuilderLoading(false); }
             };
 
-            const categoryOrder = ['mtss', 'instruction', 'career', 'attendance', 'family', 'assessment', 'planning', 'specialed', 'datatools'];
+            const categoryOrder = ['career', 'instruction', 'mtss', 'specialed', 'attendance', 'assessment', 'family', 'staff', 'planning'];
 
             const matchingTools = useMemo(() => {
                 if (!searchQuery) return [];
@@ -485,7 +811,6 @@
 
             return (
                 <div className="min-h-screen bg-white text-slate-900 font-sans flex overflow-hidden">
-                    {/* Sidebar Navigation */}
                     <aside className={`fixed inset-y-0 left-0 w-72 bg-white border-r border-slate-200 z-50 transform transition-transform duration-300 lg:relative lg:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
                         <div className="flex flex-col h-full p-6">
                             <div className="flex items-center justify-between mb-8">
@@ -499,7 +824,7 @@
                                 <button onClick={() => { setActiveView('home'); setActiveCategory(null); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors ${activeView === 'home' && !activeCategory ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:bg-slate-50'}`}><Icon name="home" /> Home</button>
                                 <button onClick={() => { setActiveView('builder'); setActiveCategory(null); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors ${activeView === 'builder' ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:bg-slate-50'}`}><Icon name="wand-2" className="text-amber-500" /> Tool Assistant</button>
                                 <button onClick={() => { setActiveView('history'); setActiveCategory(null); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors ${activeView === 'history' ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:bg-slate-50'}`}><Icon name="history" /> My Drafts ({drafts.length})</button>
-                                <div className="pt-6 pb-2 px-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">Topic Library</div>
+                                <div className="pt-6 pb-2 px-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">Library</div>
                                 {categoryOrder.map(id => (
                                     <button key={id} onClick={() => { setActiveCategory(id); setActiveView('home'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors ${activeCategory === id ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:bg-slate-50'}`}>
                                         <div className="w-5 flex justify-center">{APP_DATA[id].icon}</div>
@@ -510,7 +835,6 @@
                         </div>
                     </aside>
 
-                    {/* Main Workspace */}
                     <main className="flex-1 h-full overflow-y-auto flex flex-col bg-slate-50/30">
                         <header className="h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-between sticky top-0 z-40 backdrop-blur-sm bg-white/90">
                             <button className="lg:hidden p-2 mr-2" onClick={() => setIsSidebarOpen(true)}><Icon name="menu" /></button>
@@ -568,7 +892,7 @@
                                     </div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                         {categoryOrder.map(id => (
-                                            <div key={id} onClick={() => setActiveCategory(id)} className="bg-white p-8 rounded-2xl border border-slate-200 hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer flex flex-col">
+                                            <div key={id} onClick={() => setActiveCategory(id)} className="group bg-white p-8 rounded-2xl border border-slate-200 hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer flex flex-col">
                                                 <div className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center mb-6">{APP_DATA[id].icon}</div>
                                                 <h3 className="text-xl font-bold mb-2">{APP_DATA[id].title}</h3>
                                                 <p className="text-sm text-slate-500 mb-8 flex-grow leading-relaxed">{APP_DATA[id].summary}</p>
