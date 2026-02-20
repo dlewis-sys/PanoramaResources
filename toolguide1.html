@@ -3,221 +3,337 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Solara | Resource Guide</title>
-    
+    <title>Solara Tool Builder Assistant</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        
-        :root {
-            --pano-navy: #161242;
-        }
-
-        body { 
-            font-family: 'Inter', sans-serif; 
-            background-color: #f8fafc;
-        }
-
-        /* Custom scrollbar for a cleaner look */
-        .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+        body { font-family: 'Inter', sans-serif; }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        
-        /* Ensure the sidebar stays fixed properly */
-        .sidebar-height { height: 100vh; height: 100dvh; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
     </style>
 </head>
-<body class="antialiased text-slate-900">
+<body class="bg-slate-50">
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useMemo } = React;
+        const { useState, useEffect, useMemo, useRef } = React;
 
-        // --- ICON HELPER ---
-        const Icon = ({ name, className = "w-5 h-5", color }) => {
-            useEffect(() => { 
-                if (window.lucide) window.lucide.createIcons(); 
+        // BRAND COLORS
+        const PANO_NAVY = "#161242";
+        const PANO_GREEN = "#1FAA4A";
+        const LIGHT_GRAY = "#EEEEEE"; 
+        const SECONDARY_TURQUOISE = "#108A7D";
+        const SECONDARY_TEAL = "#00A1BB";
+        const SECONDARY_LAVENDER = "#867EBB";
+        const SECONDARY_LIME = "#9FCC3B";
+
+        // Fixed Icon Component for React Lifecycle
+        const Icon = ({ name, className = "w-5 h-5", style = {} }) => {
+            const iconRef = useRef(null);
+            useEffect(() => {
+                if (window.lucide) {
+                    window.lucide.createIcons();
+                }
             }, [name]);
-            return <i data-lucide={name} className={className} style={{ color: color }}></i>;
+            return <i data-lucide={name.toLowerCase()} className={className} style={style}></i>;
         };
 
-        // --- DATA OBJECT ---
-        const TOOL_DATA = {
-            mtss: { 
-                title: "MTSS & Support", 
-                icon: "users", 
-                color: "#1FAA4A",
+        const apiKey = ""; // USER API KEY HERE
+
+        const callGemini = async (userQuery, retryCount = 0) => {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+            const systemPrompt = `You are the Solara Custom Tool Assistant. Help educators design precise Custom Tools. Instructions: Plain text only. Category: ["Family Engagement", "Instructional Planning", "Student Engagement", "Student Support"]. Output MUST be valid JSON.`;
+
+            const payload = {
+                contents: [{ parts: [{ text: `Educator Need: ${userQuery}` }] }],
+                systemInstruction: { parts: [{ text: systemPrompt }] },
+                generationConfig: { 
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: "OBJECT",
+                        properties: {
+                            title: { type: "STRING" },
+                            description: { type: "STRING" },
+                            instructions: { type: "STRING" },
+                            category: { type: "STRING" },
+                            categoryRationale: { type: "STRING" },
+                            recommendedFields: { type: "ARRAY", items: { type: "STRING" } }
+                        },
+                        required: ["title", "description", "instructions", "category", "categoryRationale", "recommendedFields"]
+                    }
+                }
+            };
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!response.ok) throw new Error('API request failed');
+                const result = await response.json();
+                return JSON.parse(result.candidates[0].content.parts[0].text);
+            } catch (error) {
+                if (retryCount < 3) return callGemini(userQuery, retryCount + 1);
+                throw error;
+            }
+        };
+
+        const APP_DATA = {
+            mtss: {
+                id: 'mtss',
+                title: "MTSS and Student Support Tools",
+                shortTitle: "MTSS Tools",
+                icon: "users",
+                accent: SECONDARY_TURQUOISE,
+                description: "Develop multi-tiered support systems, tiered interventions, and student assistance frameworks.",
+                summary: "Multi-tiered support systems and interventions.",
                 tools: [
-                    { title: "SMART Goal Generator", description: "Design high-quality intervention targets.", prompt: "Generate a SMART goal statement for a student in Tier 2 support...", fields: ["Current Level", "Target", "Review Date"] },
-                    { title: "Behavior Plan Draft", description: "Standardized behavioral intervention logic.", prompt: "Draft a Tier 3 behavior support plan focusing on positive reinforcement...", fields: ["Triggers", "Function", "Supports"] }
+                    {
+                        title: "SMART Goal Generator",
+                        category: "Student Support",
+                        description: "Helps teachers create intervention-aligned SMART goals.",
+                        prompt: "Create a SMART goal for a student in the K–12 setting that is Specific, Measurable, Achievable, Relevant, and Time-bound...",
+                        fields: ["Perceived need", "Domain", "Tier of support", "Timeframe"]
+                    },
+                    {
+                        title: "MTSS Meeting Agenda Creator",
+                        category: "Student Support",
+                        description: "Creates a structured agenda for school-based MTSS meetings.",
+                        prompt: "Generate a detailed MTSS meeting agenda for a Tier 2/3 team working in a K–12 setting...",
+                        fields: ["Meeting type", "Student list", "Duration", "Roles"]
+                    }
                 ]
             },
-            instruction: { 
-                title: "Instruction", 
-                icon: "book-open", 
-                color: "#006DB0",
+            attendance: {
+                id: 'attendance',
+                title: "Attendance Tools",
+                shortTitle: "Attendance Tools",
+                icon: "calendar",
+                accent: SECONDARY_LIME,
+                description: "Tracking, analyzing, and improving student attendance patterns.",
+                summary: "Attendance tracking and improvement patterns.",
                 tools: [
-                    { title: "Rubric Builder", description: "Standards-aligned performance scales.", prompt: "Create a 4-level rubric for a K-12 writing assignment...", fields: ["Criteria", "Performance Levels"] }
+                    {
+                        title: "Attendance Contract Generator",
+                        category: "Student Support",
+                        description: "Drafts personalized attendance improvement contracts.",
+                        prompt: "Generate a student-centered attendance contract for a K–12 student that is collaborative...",
+                        fields: ["Identified barriers", "Engagement preferences", "Support strategies"]
+                    }
                 ]
             },
-            family: { 
-                title: "Family Engagement", 
-                icon: "heart", 
-                color: "#867EBB",
+            instruction: {
+                id: 'instruction',
+                title: "Instruction and Curriculum Tools",
+                shortTitle: "Curriculum Tools",
+                icon: "book-open",
+                accent: SECONDARY_TEAL,
+                description: "Lesson planning, curriculum development, and instructional strategies.",
+                summary: "Lesson planning and instructional strategies.",
                 tools: [
-                    { title: "Progress Update", description: "Strengths-based family communication.", prompt: "Write a short, encouraging update for a family regarding their child's progress...", fields: ["Student Name", "Positive Growth"] }
+                    {
+                        title: "Rubric Generator",
+                        category: "Instructional Planning",
+                        description: "Builds grading rubrics aligned to standards and success criteria.",
+                        prompt: "Generate a detailed rubric for a K–12 assignment, fully aligned to learning standards...",
+                        fields: ["Assignment description", "Objectives", "Performance levels"]
+                    }
+                ]
+            },
+            career: {
+                id: 'career',
+                title: "College and Career Readiness Tools",
+                shortTitle: "CCR Tools",
+                icon: "graduation-cap",
+                accent: SECONDARY_LIME,
+                description: "Preparing students for post-secondary success and career planning.",
+                summary: "Post-secondary success and career planning.",
+                tools: [
+                    {
+                        title: "Career Pathway Exploration Tool",
+                        category: "Student Engagement",
+                        description: "Matches students with potential career pathways.",
+                        prompt: "Recommend career pathways for a K–12 student based on interests and strengths...",
+                        fields: ["Student interests", "Strengths/skills", "Goals"]
+                    }
+                ]
+            },
+            family: {
+                id: 'family',
+                title: "Family Engagement Tools",
+                shortTitle: "Family Engagement",
+                icon: "heart",
+                accent: SECONDARY_LAVENDER,
+                description: "Building stronger connections between families, students, and schools.",
+                summary: "Family, student, and school connections.",
+                tools: [
+                    {
+                        title: "Family Update Generator",
+                        category: "Family Engagement",
+                        description: "Drafts regular, personalized updates to families about student progress.",
+                        prompt: "Create a biweekly family update for a K–12 student that summarizes academic progress...",
+                        fields: ["Progress highlights", "Areas for growth", "Home support"]
+                    }
                 ]
             }
         };
 
-        const ToolCard = ({ tool, color }) => {
-            const [open, setOpen] = useState(false);
-            const [copied, setCopied] = useState(false);
+        function ToolCard({ tool, categoryId, index, onCopy, accentColor, initiallyExpanded = false }) {
+            const [isExpanded, setIsExpanded] = useState(initiallyExpanded);
+            const [copyFeedback, setCopyFeedback] = useState(false);
 
-            const handleCopy = () => {
-                navigator.clipboard.writeText(tool.prompt);
-                setCopied(true);
-                setTimeout(() => setCopied(false), 2000);
+            const triggerCopy = (e) => {
+                e.stopPropagation();
+                onCopy(tool.prompt || tool.instructions);
+                setCopyFeedback(true);
+                setTimeout(() => setCopyFeedback(false), 2000);
             };
 
             return (
-                <div className="bg-white border border-slate-200 rounded-xl overflow-hidden mb-4 shadow-sm hover:border-slate-300 transition-all">
-                    <button 
-                        onClick={() => setOpen(!open)}
-                        className="w-full p-5 text-left flex items-center justify-between group"
-                    >
-                        <div className="flex items-center gap-4">
-                            <div className="w-1.5 h-10 rounded-full" style={{ backgroundColor: color }}></div>
-                            <div>
-                                <h3 className="font-bold text-slate-900 text-lg">{tool.title}</h3>
-                                <p className="text-sm text-slate-500">{tool.description}</p>
-                            </div>
+                <div className="bg-white rounded-lg border border-slate-200 overflow-hidden shadow-sm transition-all mb-4">
+                    <div className="p-6 md:p-8 cursor-pointer hover:bg-slate-50 flex justify-between items-center" onClick={() => setIsExpanded(!isExpanded)}>
+                        <div className="flex-1">
+                            <h3 className="text-2xl font-bold" style={{ color: PANO_NAVY }}>{tool.title}</h3>
+                            <p className="text-slate-600 mt-2">{tool.description}</p>
                         </div>
-                        <Icon name={open ? "chevron-up" : "chevron-down"} className="text-slate-300 group-hover:text-slate-500 transition-colors" />
-                    </button>
-                    
-                    {open && (
-                        <div className="p-6 bg-slate-50 border-t border-slate-100">
-                            <div className="flex justify-between items-center mb-3">
-                                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Framework Logic</span>
-                                <button 
-                                    onClick={handleCopy}
-                                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold text-white transition-all ${copied ? 'bg-green-600' : 'bg-slate-900 hover:bg-black'}`}
-                                >
-                                    <Icon name={copied ? "check" : "copy"} className="w-3 h-3" />
-                                    {copied ? "Copied" : "Copy"}
-                                </button>
-                            </div>
-                            <div className="p-4 bg-white border border-slate-200 rounded-lg text-sm italic text-slate-700 leading-relaxed shadow-inner">
-                                {tool.prompt}
-                            </div>
-                            <div className="mt-4 flex flex-wrap gap-2">
-                                {tool.fields.map((f, i) => (
-                                    <span key={i} className="px-3 py-1 bg-white border border-slate-200 rounded-full text-[11px] font-semibold text-slate-500 italic">
-                                        • {f}
+                        <Icon name={isExpanded ? "chevron-up" : "chevron-down"} className="text-slate-400 ml-4" />
+                    </div>
+
+                    {isExpanded && (
+                        <div className="p-6 md:p-8 border-t border-slate-100 bg-white grid grid-cols-1 xl:grid-cols-2 gap-10">
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-[10px] font-bold uppercase tracking-widest flex items-center gap-2" style={{ color: PANO_NAVY }}>
+                                        <Icon name="file-text" className="w-3 h-3" style={{ color: PANO_GREEN }} /> Tool Instructions
                                     </span>
-                                ))}
+                                    <button onClick={triggerCopy} className={`px-4 py-1.5 rounded font-bold text-[10px] uppercase text-white transition-all ${copyFeedback ? 'bg-green-600' : 'bg-blue-600'}`}>
+                                        {copyFeedback ? 'Copied!' : 'Copy Instructions'}
+                                    </button>
+                                </div>
+                                <div className="p-6 rounded border-l-4 text-sm italic text-slate-700 whitespace-pre-wrap" style={{ backgroundColor: LIGHT_GRAY, borderLeftColor: PANO_GREEN }}>
+                                    "{tool.prompt || tool.instructions}"
+                                </div>
+                            </div>
+                            <div className="space-y-6">
+                                <div>
+                                    <span className="text-[10px] font-bold uppercase tracking-widest block mb-2" style={{ color: PANO_NAVY }}>Category</span>
+                                    <span className="inline-block px-3 py-1 rounded text-xs font-bold bg-slate-800 text-white">{tool.category}</span>
+                                </div>
+                                <div>
+                                    <span className="text-[10px] font-bold uppercase tracking-widest block mb-2" style={{ color: PANO_GREEN }}>Recommended Fields</span>
+                                    <ul className="space-y-2">
+                                        {(tool.fields || tool.recommendedFields || []).map((f, i) => (
+                                            <li key={i} className="flex items-center gap-2 text-xs text-slate-600">
+                                                <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: accentColor || PANO_GREEN }} />
+                                                {f}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
                             </div>
                         </div>
                     )}
                 </div>
             );
-        };
+        }
 
         const App = () => {
-            const [activeCat, setActiveCat] = useState('all');
+            const [view, setView] = useState('home');
+            const [activeCat, setActiveCat] = useState(null);
             const [search, setSearch] = useState('');
+            const [drafts, setDrafts] = useState([]);
+            const [loading, setLoading] = useState(false);
+            const [userInput, setUserInput] = useState('');
 
-            const filteredData = useMemo(() => {
-                let items = [];
-                Object.entries(TOOL_DATA).forEach(([key, cat]) => {
-                    if (activeCat === 'all' || activeCat === key) {
-                        cat.tools.forEach(t => items.push({ ...t, color: cat.color, catTitle: cat.title }));
-                    }
-                });
-                if (search) {
-                    items = items.filter(i => i.title.toLowerCase().includes(search.toLowerCase()) || i.description.toLowerCase().includes(search.toLowerCase()));
-                }
-                return items;
-            }, [activeCat, search]);
+            const handleGenerate = async () => {
+                if (!userInput.trim()) return;
+                setLoading(true);
+                try {
+                    const data = await callGemini(userInput);
+                    setDrafts([data, ...drafts]);
+                    setUserInput('');
+                } catch (e) { alert("Error generating tool."); }
+                setLoading(false);
+            };
 
             return (
-                <div className="flex w-full min-h-screen">
+                <div className="min-h-screen flex">
                     {/* Sidebar */}
-                    <aside className="w-72 bg-[#161242] text-white fixed sidebar-height flex flex-col z-20 shadow-xl">
+                    <aside className="w-72 bg-white border-r border-slate-200 hidden lg:flex flex-col fixed h-full">
                         <div className="p-8">
-                            <h1 className="text-2xl font-black tracking-tighter italic">SOLARA</h1>
-                            <div className="h-1 w-12 bg-[#1FAA4A] mt-2"></div>
+                            <h1 className="text-2xl font-bold" style={{ color: PANO_NAVY }}>Solara Guide</h1>
                         </div>
-
-                        <nav className="flex-1 px-4 space-y-1 overflow-y-auto custom-scrollbar">
-                            <button 
-                                onClick={() => setActiveCat('all')}
-                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${activeCat === 'all' ? 'bg-white/10 font-bold text-white' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
-                            >
-                                <Icon name="grid" /> All Resources
+                        <nav className="flex-1 px-4 space-y-2">
+                            <button onClick={() => {setView('home'); setActiveCat(null)}} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl ${view === 'home' && !activeCat ? 'bg-slate-100 font-bold' : ''}`}>
+                                <Icon name="home" /> Home
                             </button>
-                            
-                            <div className="pt-6 pb-2 px-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Categories</div>
-                            
-                            {Object.entries(TOOL_DATA).map(([key, cat]) => (
-                                <button 
-                                    key={key}
-                                    onClick={() => setActiveCat(key)}
-                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${activeCat === key ? 'bg-white/10 font-bold text-white' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
-                                >
-                                    <Icon name={cat.icon} color={cat.color} /> {cat.title}
+                            <button onClick={() => setView('builder')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl ${view === 'builder' ? 'bg-slate-100 font-bold' : ''}`}>
+                                <Icon name="wand-2" className="text-amber-500" /> Tool Assistant
+                            </button>
+                            <div className="pt-6 pb-2 px-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Categories</div>
+                            {Object.values(APP_DATA).map(cat => (
+                                <button key={cat.id} onClick={() => {setActiveCat(cat.id); setView('home')}} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl ${activeCat === cat.id ? 'bg-slate-100 font-bold' : ''}`}>
+                                    <Icon name={cat.icon} style={{ color: PANO_GREEN }} /> {cat.shortTitle}
                                 </button>
                             ))}
                         </nav>
-
-                        <div className="p-8 border-t border-white/5">
-                            <p className="text-[10px] text-slate-500 font-medium leading-relaxed">
-                                &copy; 2026 Solara Frameworks.<br/>Designated for District Use.
-                            </p>
-                        </div>
                     </aside>
 
-                    {/* Main Content */}
-                    <main className="flex-1 ml-72 bg-slate-50 p-12 min-h-screen">
-                        <div className="max-w-4xl mx-auto">
-                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
-                                <div>
-                                    <h2 className="text-4xl font-black text-slate-900 tracking-tight">
-                                        {activeCat === 'all' ? "Resource Library" : TOOL_DATA[activeCat].title}
-                                    </h2>
-                                    <p className="text-slate-500 mt-2">Browse standardized prompts and logical frameworks.</p>
-                                </div>
-                                
-                                <div className="relative">
-                                    <Icon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
-                                    <input 
-                                        type="text" 
-                                        placeholder="Search tools..." 
-                                        className="pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-green-500 w-64 shadow-sm"
-                                        value={search}
-                                        onChange={(e) => setSearch(e.target.value)}
-                                    />
-                                </div>
+                    {/* Main */}
+                    <main className="flex-1 lg:ml-72 flex flex-col min-h-screen">
+                        <header className="h-16 bg-white border-b border-slate-200 sticky top-0 z-10 flex items-center px-8">
+                            <div className="relative w-full max-w-md">
+                                <Icon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+                                <input type="text" placeholder="Search tools..." value={search} onChange={e => setSearch(e.target.value)} className="w-full bg-slate-100 rounded-lg pl-10 pr-4 py-2 text-sm focus:outline-none" />
                             </div>
+                        </header>
 
-                            <div className="grid grid-cols-1 gap-2">
-                                {filteredData.length > 0 ? (
-                                    filteredData.map((tool, i) => (
-                                        <ToolCard key={i} tool={tool} color={tool.color} />
-                                    ))
-                                ) : (
-                                    <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-slate-300">
-                                        <Icon name="search-x" className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                                        <p className="text-slate-500 font-medium">No tools match your search criteria.</p>
+                        <div className="p-10 max-w-6xl mx-auto w-full">
+                            {view === 'builder' ? (
+                                <div className="space-y-10">
+                                    <div className="max-w-2xl">
+                                        <h2 className="text-4xl font-bold mb-4" style={{ color: PANO_NAVY }}>Tool Builder Assistant</h2>
+                                        <p className="text-slate-600">Describe a challenge and AI will draft a tool for you.</p>
                                     </div>
-                                )}
-                            </div>
+                                    <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                                        <textarea value={userInput} onChange={e => setUserInput(e.target.value)} className="w-full h-40 bg-slate-50 border rounded-xl p-6 outline-none focus:ring-2 focus:ring-green-500" placeholder="e.g., I need a tool for tracking..." />
+                                        <button onClick={handleGenerate} disabled={loading} className="w-full py-4 rounded-xl font-bold text-white flex justify-center items-center gap-2" style={{ backgroundColor: PANO_NAVY }}>
+                                            {loading ? <Icon name="loader-2" className="animate-spin" /> : <Icon name="sparkles" className="text-yellow-400" />}
+                                            {loading ? 'Drafting...' : 'Draft My Tool'}
+                                        </button>
+                                    </div>
+                                    {drafts.map((d, i) => <ToolCard key={i} tool={d} onCopy={t => navigator.clipboard.writeText(t)} accentColor={SECONDARY_TEAL} initiallyExpanded={true} />)}
+                                </div>
+                            ) : activeCat ? (
+                                <div className="space-y-8">
+                                    <div className="bg-white p-8 rounded-xl border border-slate-200 flex items-center gap-6">
+                                        <div className="p-4 bg-slate-50 rounded-full">
+                                            <Icon name={APP_DATA[activeCat].icon} style={{ color: PANO_GREEN }} className="w-8 h-8" />
+                                        </div>
+                                        <div>
+                                            <h2 className="text-3xl font-bold" style={{ color: PANO_NAVY }}>{APP_DATA[activeCat].title}</h2>
+                                            <p className="text-slate-600">{APP_DATA[activeCat].description}</p>
+                                        </div>
+                                    </div>
+                                    {APP_DATA[activeCat].tools.map((t, i) => <ToolCard key={i} tool={t} onCopy={text => navigator.clipboard.writeText(text)} accentColor={APP_DATA[activeCat].accent} />)}
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {Object.values(APP_DATA).map(cat => (
+                                        <div key={cat.id} onClick={() => setActiveCat(cat.id)} className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md cursor-pointer transition-all">
+                                            <Icon name={cat.icon} className="w-8 h-8 mb-4" style={{ color: PANO_GREEN }} />
+                                            <h3 className="font-bold text-xl mb-2" style={{ color: PANO_NAVY }}>{cat.title}</h3>
+                                            <p className="text-sm text-slate-500">{cat.summary}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     </main>
                 </div>
