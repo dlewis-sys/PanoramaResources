@@ -11,9 +11,8 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; margin: 0; }
+        #root { min-height: 100vh; display: flex; }
     </style>
 </head>
 <body>
@@ -22,31 +21,35 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
-        // --- CONSTANTS ---
+        // --- BRAND COLORS ---
         const PANO_NAVY = "#161242";
         const PANO_GREEN = "#1FAA4A";
-        const LIGHT_GRAY = "#EEEEEE"; 
         const SECONDARY_TURQUOISE = "#108A7D";
         const SECONDARY_TEAL = "#00A1BB";
         const SECONDARY_LAVENDER = "#867EBB";
         const SECONDARY_LIME = "#9FCC3B";
 
-        // --- ICON WRAPPER ---
+        // --- ICON COMPONENT (Fixed for Tailwind/Lucide) ---
         const Icon = ({ name, className = "w-5 h-5", style = {} }) => {
-            useEffect(() => { if (window.lucide) window.lucide.createIcons(); }, [name]);
+            const iconRef = useRef(null);
+            useEffect(() => {
+                if (window.lucide) {
+                    window.lucide.createIcons();
+                }
+            }, [name]);
             return <i data-lucide={name} className={className} style={style}></i>;
         };
 
-        // --- API UTILS ---
+        // --- GEMINI API UTILS ---
         const callGemini = async (userQuery, apiKey) => {
             if (!apiKey) throw new Error("Please enter your API Key in the sidebar.");
             const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
             
-            const systemPrompt = `You are a Tool Assistant. Output MUST be valid JSON. 
+            const systemPrompt = `You are the Solara Tool Assistant. Return ONLY a JSON object. 
             Schema: {"title": "String", "description": "String", "instructions": "String", "category": "String", "recommendedFields": ["String"]}`;
 
             const payload = {
-                contents: [{ parts: [{ text: `Need: ${userQuery}` }] }],
+                contents: [{ parts: [{ text: `Educator Need: ${userQuery}` }] }],
                 systemInstruction: { parts: [{ text: systemPrompt }] },
                 generationConfig: { responseMimeType: "application/json" }
             };
@@ -58,73 +61,31 @@
             });
 
             const result = await response.json();
-            if (!response.ok) throw new Error(result.error?.message || "API Error");
+            if (!response.ok) throw new Error(result.error?.message || "API request failed");
             return JSON.parse(result.candidates[0].content.parts[0].text);
         };
 
         // --- DATA ---
         const APP_DATA = {
-            career: { id: 'career', title: "College & Career", icon: "graduation-cap", accent: SECONDARY_LIME, tools: [
-                { title: "Career Pathway Matcher", category: "CCR", description: "Matches interests to pathways.", instructions: "Analyze interests...", fields: ["Interests", "Strengths"] }
+            mtss: { id: 'mtss', title: "MTSS Tools", icon: "users", accent: SECONDARY_TURQUOISE, tools: [
+                { title: "SMART Goal Generator", description: "Creates intervention-aligned SMART goals.", instructions: "Generate a SMART goal that is Specific, Measurable...", fields: ["Domain", "Tier", "Timeline"] }
+            ]},
+            attendance: { id: 'attendance', title: "Attendance", icon: "calendar", accent: SECONDARY_LIME, tools: [
+                { title: "Attendance Contract", description: "Personalized student-family contracts.", instructions: "Draft a non-punitive attendance agreement...", fields: ["Barriers", "Goals", "Check-ins"] }
             ]},
             instruction: { id: 'instruction', title: "Curriculum", icon: "book-open", accent: SECONDARY_TEAL, tools: [
-                { title: "Rubric Generator", category: "Instruction", description: "Standards-aligned rubrics.", instructions: "Create rubric for...", fields: ["Standard", "Level"] }
+                { title: "Rubric Generator", description: "Standards-aligned grading rubrics.", instructions: "Create a 4-level rubric for...", fields: ["Standard", "Learning Objective"] }
             ]},
-            mtss: { id: 'mtss', title: "MTSS Support", icon: "users", accent: SECONDARY_TURQUOISE, tools: [
-                { title: "SMART Goal Creator", category: "Support", description: "MTSS goal setting.", instructions: "Draft SMART goal...", fields: ["Tier", "Target"] }
+            family: { id: 'family', title: "Engagement", icon: "heart", accent: SECONDARY_LAVENDER, tools: [
+                { title: "Family Update Draft", description: "Simplified progress updates for home.", instructions: "Write a strengths-based update for parents...", fields: ["Growth area", "Positive highlight"] }
             ]}
         };
 
-        // --- UI COMPONENTS ---
-        const ToolCard = ({ tool, expanded: initialExpanded = false }) => {
-            const [expanded, setExpanded] = useState(initialExpanded);
-            return (
-                <div className="bg-white border rounded-xl mb-4 overflow-hidden shadow-sm transition-all">
-                    <div className="p-5 cursor-pointer flex justify-between items-center" onClick={() => setExpanded(!expanded)}>
-                        <div>
-                            <h4 className="font-bold text-slate-800">{tool.title}</h4>
-                            <p className="text-sm text-slate-500">{tool.description}</p>
-                        </div>
-                        <Icon name={expanded ? "chevron-up" : "chevron-down"} className="text-slate-400 w-4 h-4" />
-                    </div>
-                    {expanded && (
-                        <div className="p-5 border-t bg-slate-50 space-y-4">
-                            <div>
-                                <label className="text-[10px] font-bold uppercase text-slate-400">Prompt Instructions</label>
-                                <div className="p-3 bg-white border rounded text-sm italic text-slate-600 mt-1">{tool.instructions}</div>
-                            </div>
-                            <div className="flex flex-wrap gap-2">
-                                {(tool.fields || tool.recommendedFields).map((f, i) => (
-                                    <span key={i} className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs font-medium border border-blue-100">{f}</span>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-                </div>
-            );
-        };
+        // --- SUB-COMPONENTS ---
+        const ToolCard = ({ tool, accentColor, initiallyExpanded = false }) => {
+            const [expanded, setExpanded] = useState(initiallyExpanded);
+            const [copied, setCopied] = useState(false);
 
-        const App = () => {
-            const [view, setView] = useState('home');
-            const [key, setKey] = useState('');
-            const [input, setInput] = useState('');
-            const [loading, setLoading] = useState(false);
-            const [history, setHistory] = useState([]);
-
-            const handleGen = async () => {
-                setLoading(true);
-                try {
-                    const res = await callGemini(input, key);
-                    setHistory([res, ...history]);
-                    setInput('');
-                } catch (e) { alert(e.message); }
-                setLoading(false);
-            };
-
-            return (
-                <div className="flex min-h-screen">
-                    <aside className="w-64 bg-white border-r p-6 flex flex-col">
-                        <h1 className="text-xl font-bold mb-10" style={{ color: PANO_NAVY }}>Solara Guide</h1>
-                        <nav className="space-y-2 flex-1">
-                            <button onClick={() => setView('home')} className={`w-full flex items-center gap-3 p-3 rounded-lg ${view==='home'?'bg-slate-100 font-bold':''}`}><Icon name="home" /> Library</button>
-                            <button onClick={() => setView('builder')} className={`w-full
+            const handleCopy = (e) => {
+                e.stopPropagation();
+                navigator.clipboard
